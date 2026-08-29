@@ -91,6 +91,11 @@ typings/
 .nuxt
 dist
 
+# Local Graphify index and WXT build output
+graphify-out/
+.wxt/
+.output/
+
 # Gatsby files
 .cache/
 # Comment in the public line in if your project uses Gatsby and *not* Next.js
