@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" role="img" aria-labelledby="title desc">
+  <title id="title">Meet Subtitlesのセットアップ手順</title>
+  <desc id="desc">ChromeまたはEdgeの拡張機能管理画面から拡張機能を有効にし、Meetを再読み込みする3ステップ</desc>
+  <rect width="1200" height="680" rx="28" fill="#f8fafc"/>
+  <text x="72" y="82" fill="#0f172a" font-family="sans-serif" font-size="38" font-weight="700">Meet Subtitles セットアップ</text>
+  <text x="72" y="124" fill="#475569" font-family="sans-serif" font-size="21">Chrome / Edgeで3ステップ</text>
+  <g font-family="sans-serif">
+    <rect x="72" y="190" width="320" height="370" rx="22" fill="#fff" stroke="#cbd5e1" stroke-width="3"/>
+    <circle cx="128" cy="250" r="30" fill="#2563eb"/><text x="118" y="261" fill="#fff" font-size="25" font-weight="700">1</text>
+    <text x="92" y="322" fill="#0f172a" font-size="25" font-weight="700">拡張機能を追加</text>
+    <rect x="102" y="356" width="260" height="142" rx="12" fill="#e2e8f0"/>
+    <rect x="122" y="378" width="142" height="15" rx="7" fill="#94a3b8"/>
+    <rect x="122" y="412" width="202" height="15" rx="7" fill="#cbd5e1"/>
+    <rect x="122" y="450" width="105" height="27" rx="13" fill="#2563eb"/>
+    <text x="92" y="536" fill="#475569" font-size="18">ZIPまたは配布ページから追加</text>
+    <rect x="440" y="190" width="320" height="370" rx="22" fill="#fff" stroke="#cbd5e1" stroke-width="3"/>
+    <circle cx="496" cy="250" r="30" fill="#2563eb"/><text x="486" y="261" fill="#fff" font-size="25" font-weight="700">2</text>
+    <text x="460" y="322" fill="#0f172a" font-size="25" font-weight="700">有効にして固定</text>
+    <rect x="470" y="356" width="260" height="142" rx="12" fill="#e2e8f0"/>
+    <rect x="492" y="380" width="180" height="14" rx="7" fill="#94a3b8"/>
+    <circle cx="690" cy="450" r="19" fill="#16a34a"/><path d="m680 450 7 7 14-17" fill="none" stroke="#fff" stroke-width="5"/>
+    <text x="460" y="536" fill="#475569" font-size="18">ツールバーから状態を確認</text>
+    <rect x="808" y="190" width="320" height="370" rx="22" fill="#fff" stroke="#cbd5e1" stroke-width="3"/>
+    <circle cx="864" cy="250" r="30" fill="#2563eb"/><text x="854" y="261" fill="#fff" font-size="25" font-weight="700">3</text>
+    <text x="828" y="322" fill="#0f172a" font-size="25" font-weight="700">Meetを再読み込み</text>
+    <rect x="838" y="356" width="260" height="142" rx="12" fill="#dbeafe"/>
+    <rect x="858" y="380" width="160" height="14" rx="7" fill="#60a5fa"/>
+    <rect x="858" y="414" width="210" height="14" rx="7" fill="#93c5fd"/>
+    <rect x="954" y="458" width="86" height="20" rx="10" fill="#2563eb"/>
+    <text x="828" y="536" fill="#475569" font-size="18">会議に入り字幕を確認</text>
+  </g>
+</svg>
