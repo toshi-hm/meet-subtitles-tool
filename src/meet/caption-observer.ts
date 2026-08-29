@@ -22,7 +22,10 @@ export class MeetCaptionObserver {
     this.scan();
     if (!this.options.document.body) return;
 
-    this.mutationObserver = new MutationObserver(() => this.scheduleScan());
+    const MutationObserverClass =
+      this.options.document.defaultView?.MutationObserver ?? globalThis.MutationObserver;
+    if (!MutationObserverClass) return;
+    this.mutationObserver = new MutationObserverClass(() => this.scheduleScan());
     this.mutationObserver.observe(this.options.document.body, {
       subtree: true,
       childList: true,

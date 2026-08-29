@@ -8,11 +8,12 @@
     "dev": "wxt",
     "build": "wxt build",
     "test": "vitest run",
+    "typecheck": "wxt prepare && tsc --noEmit",
     "lint": "oxlint --deny-warnings .",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#graphify-out\"",
-    "check": "bun run lint && bun run format:check && bun run lint:md && bun run test && bun run build"
+    "check": "bun run lint && bun run format:check && bun run lint:md && bun run typecheck && bun run test && bun run build"
   },
   "dependencies": {},
   "devDependencies": {

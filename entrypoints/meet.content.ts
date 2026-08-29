@@ -1,8 +1,10 @@
 import { CaptionAccumulator } from "../src/domain/caption-accumulator";
 import { createTranscriptFilename, formatTranscript } from "../src/domain/transcript";
 import type { MeetingSession } from "../src/domain/types";
+import { DRIVE_SYNC_MESSAGE, type DriveSyncResponse } from "../src/drive/messages";
 import { enableCaptions, getMeetingKey } from "../src/meet/caption-dom";
 import { MeetCaptionObserver } from "../src/meet/caption-observer";
+import { MeetingLifecycleObserver } from "../src/meet/meeting-lifecycle";
 import { SubtitleRepository } from "../src/storage/indexed-db";
 import { FloatingPanel } from "../src/ui/floating-panel";
 
@@ -37,6 +39,30 @@ export default defineContentScript({
     await repository.saveSession(session);
     const accumulator = new CaptionAccumulator(session.id, existingEntries.length, existingEntries);
 
+    const requestDriveSync = async (interactive: boolean): Promise<void> => {
+      const entries = await repository.listEntries(session.id);
+      if (entries.length === 0) throw new Error("保存する字幕がまだありません");
+      const response = (await browser.runtime.sendMessage({
+        type: DRIVE_SYNC_MESSAGE,
+        interactive,
+        payload: {
+          session,
+          entries,
+          filename: createTranscriptFilename(new Date(session.startedAt)),
+        },
+      })) as DriveSyncResponse;
+      if (!response?.ok) throw new Error(response?.message ?? "Google Drive保存に失敗しました");
+      session.driveFileId = response.fileId;
+      session.driveFolderId = response.folderId;
+      if (session.status === "ending") session.status = "completed";
+      await repository.saveSession(session);
+      await repository.saveSyncQueue({
+        sessionId: session.id,
+        state: "completed",
+        updatedAt: Date.now(),
+      });
+    };
+
     const panel = new FloatingPanel(document, {
       onCopy: async () => {
         const entries = await repository.listEntries(session.id);
@@ -53,7 +79,8 @@ export default defineContentScript({
         panel.notify("TXTファイルを保存しました");
       },
       onDrive: async () => {
-        panel.notify("Google Drive保存は次の実装単位で有効になります");
+        await requestDriveSync(true);
+        panel.notify("Google Driveに保存しました");
       },
     });
     panel.update("initialising", existingEntries.length);
@@ -84,19 +111,31 @@ export default defineContentScript({
           },
         });
         observer.start();
-        ctx.addEventListener(window, "pagehide", () => {
+        const finishSession = (): void => {
+          if (session.status === "completed") return;
           session.status = "ending";
           void repository.saveSession(session);
           panel.update("saving", accumulator.getEntries().length);
+          void requestDriveSync(false).catch(() => undefined);
+        };
+        const lifecycle = new MeetingLifecycleObserver({
+          document,
+          onEnd: finishSession,
+        });
+        lifecycle.start();
+        ctx.addEventListener(window, "pagehide", () => {
+          finishSession();
         });
         ctx.addEventListener(window, "beforeunload", () => {
-          session.status = "ending";
-          void repository.saveSession(session);
+          finishSession();
         });
       };
 
       tryEnableCaptions();
       ctx.setInterval(tryEnableCaptions, 1000);
+      ctx.setInterval(() => {
+        void requestDriveSync(false).catch(() => undefined);
+      }, 30_000);
     };
 
     if (document.body) start();

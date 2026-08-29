@@ -9,9 +9,10 @@ describe("caption DOM adapter", () => {
     button.setAttribute("aria-label", "Turn on captions");
     button.setAttribute("aria-pressed", "false");
     window.document.body.append(button);
+    const document = window.document as unknown as Document;
 
-    expect(getCaptionToggleState(window.document)).toBe("off");
-    expect(enableCaptions(window.document)).toBe("on");
+    expect(getCaptionToggleState(document)).toBe("off");
+    expect(enableCaptions(document)).toBe("on");
     expect(button.onclick).toBeNull();
   });
 
@@ -21,7 +22,7 @@ describe("caption DOM adapter", () => {
     root.innerHTML =
       '<div data-caption-entry data-source-key="one" data-speaker="Alice"><span data-caption-text="">Hello world</span></div>';
 
-    expect(extractCaptionCandidates(root, 1_000)).toEqual([
+    expect(extractCaptionCandidates(root as unknown as Element, 1_000)).toEqual([
       { sourceKey: "one", speaker: "Alice", text: "Hello world", occurredAt: 1_000 },
     ]);
   });

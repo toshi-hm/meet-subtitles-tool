@@ -115,11 +115,15 @@ DOM検出は `MeetSelectors` に集約し、aria-label、role、表示テキス�
 ## 8. Drive同期
 
 1. ユーザー操作でOAuthトークンを取得する。
-2. 保存済みのフォルダIDがあれば存在確認する。
-3. なければ `Meet Subtitles` フォルダを作成し、IDを拡張機能storageへ保存する。
-4. `text/plain` のTXTファイルを作成する。
-5. セッションの `driveFileId` と同期時刻をIndexedDBへ保存する。
-6. 再同期時は同じDriveファイルを更新し、終了時に最新内容へする。
+2. content scriptがIndexedDBから字幕スナップショットを読み出す。
+3. runtime messageで字幕スナップショットをservice workerへ渡す。
+4. 保存済みのフォルダIDがあれば存在確認する。
+5. なければ `Meet Subtitles` フォルダを作成し、IDを拡張機能storageへ保存する。
+6. `text/plain` のTXTファイルを作成する。
+7. セッションの `driveFileId` と同期時刻をcontent script側のIndexedDBへ保存する。
+8. 再同期時は同じDriveファイルを更新し、終了時に最新内容へする。
+
+Content scriptのIndexedDBはMeetページのストレージ境界にあるため、service workerと直接共有しない。service workerはruntime messageで受け取ったスナップショットをDriveへ送信し、次回のMeet起動時はcontent script側の未同期キューを再利用する。
 
 `drive.file` の制約上、ユーザーが手動作成した同名フォルダを横断的に検索できない場合がある。その場合は拡張機能が作成した管理対象フォルダを利用する。全Drive権限での検索は採用しない。
 
