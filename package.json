@@ -1,0 +1,29 @@
+{
+  "name": "meet-subtitles-tool",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Google Meetの字幕を保存しやすくするChromium系ブラウザ拡張機能",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build",
+    "test": "vitest run",
+    "lint": "oxlint --deny-warnings .",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check .",
+    "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#graphify-out\"",
+    "check": "bun run lint && bun run format:check && bun run lint:md && bun run test && bun run build"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/chrome": "^0.2.7",
+    "fake-indexeddb": "^6.2.5",
+    "happy-dom": "^20.11.15",
+    "markdownlint-cli2": "^0.23.2",
+    "oxfmt": "^0.65.0",
+    "oxlint": "^1.80.0",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11",
+    "wxt": "^0.21.4"
+  }
+}
