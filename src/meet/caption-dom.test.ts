@@ -1,6 +1,11 @@
 import { Window } from "happy-dom";
 import { describe, expect, it } from "vitest";
-import { enableCaptions, extractCaptionCandidates, getCaptionToggleState } from "./caption-dom";
+import {
+  enableCaptions,
+  extractCaptionCandidates,
+  findCaptionRoots,
+  getCaptionToggleState,
+} from "./caption-dom";
 
 describe("caption DOM adapter", () => {
   it("recognises an off captions button and enables it", () => {
@@ -25,5 +30,18 @@ describe("caption DOM adapter", () => {
     expect(extractCaptionCandidates(root as unknown as Element, 1_000)).toEqual([
       { sourceKey: "one", speaker: "Alice", text: "Hello world", occurredAt: 1_000 },
     ]);
+  });
+
+  it("does not treat Meet accessibility announcements as caption roots", () => {
+    const window = new Window();
+    window.document.body.innerHTML = `
+      <div aria-live="polite">会議の準備が整いました</div>
+      <div aria-live="assertive">
+        <button>close閉じる</button>
+        <button>言語を選択</button>
+      </div>
+    `;
+
+    expect(findCaptionRoots(window.document as unknown as Document)).toEqual([]);
   });
 });

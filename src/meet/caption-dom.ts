@@ -1,12 +1,6 @@
 import type { CaptionCandidate } from "../domain/types";
 
-const CAPTION_ROOT_SELECTORS = [
-  "[data-meet-captions]",
-  ".a4cQT",
-  '[jsname="tgaKEf"]',
-  '[aria-live="polite"]',
-  '[aria-live="assertive"]',
-];
+const CAPTION_ROOT_SELECTORS = ["[data-meet-captions]", ".a4cQT", '[jsname="tgaKEf"]'];
 
 const CAPTION_ENTRY_SELECTORS = [
   "[data-caption-entry]",
