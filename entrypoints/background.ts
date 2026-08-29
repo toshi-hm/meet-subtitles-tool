@@ -9,15 +9,20 @@ import {
   type DriveSyncMessage,
   type DriveSyncResponse,
 } from "../src/drive/messages";
+import { GoogleDriveOAuth } from "../src/drive/google-oauth";
 import { DriveHttpError, GoogleDriveClient } from "../src/drive/google-drive";
+import { toDriveErrorMessage } from "../src/drive/errors";
 
 export default defineBackground(() => {
-  const identity = {
-    getAuthToken: (details?: { interactive?: boolean }) => browser.identity.getAuthToken(details),
-    removeCachedAuthToken: (details: { token: string }) =>
-      browser.identity.removeCachedAuthToken(details),
-  };
-  const drive = new GoogleDriveClient(fetch, identity);
+  const oauth = new GoogleDriveOAuth(
+    {
+      getRedirectURL: () => browser.identity.getRedirectURL(),
+      launchWebAuthFlow: (details) => browser.identity.launchWebAuthFlow(details),
+    },
+    browser.storage.local,
+    fetch,
+  );
+  const drive = new GoogleDriveClient(fetch);
 
   browser.runtime.onMessage.addListener(
     (message: DriveMessage): Promise<DriveResponse> | undefined => {
@@ -29,42 +34,41 @@ export default defineBackground(() => {
 
   async function authenticateDrive(message: DriveAuthMessage): Promise<DriveAuthResponse> {
     try {
-      await drive.getAccessToken(message.interactive);
+      await oauth.getAccessToken(message.interactive);
       return { ok: true };
     } catch (error) {
       return {
         ok: false,
-        message: error instanceof Error ? error.message : "Google Driveに接続できませんでした",
+        message: toDriveErrorMessage(error, "エラー: Google Driveへの接続に失敗しました。"),
       };
     }
   }
 
   async function syncToDrive(message: DriveSyncMessage): Promise<DriveSyncResponse> {
     try {
-      const token = await drive.getAccessToken(message.interactive);
+      const token = await oauth.getAccessToken(message.interactive);
       return await syncWithToken(message, token);
     } catch (error) {
       if (!(error instanceof DriveHttpError) || error.status !== 401) {
         return {
           ok: false,
-          message: error instanceof Error ? error.message : "Google Drive保存に失敗しました",
+          message: toDriveErrorMessage(error, "エラー: Google Drive保存に失敗しました。"),
         };
       }
-      return retryAfterClearingToken(message, error);
+      return retryAfterClearingToken(message);
     }
   }
 
-  async function retryAfterClearingToken(
-    message: DriveSyncMessage,
-    error: DriveHttpError,
-  ): Promise<DriveSyncResponse> {
+  async function retryAfterClearingToken(message: DriveSyncMessage): Promise<DriveSyncResponse> {
     try {
-      const token = await drive.getAccessToken(message.interactive);
-      await identity.removeCachedAuthToken({ token });
-      const refreshedToken = await drive.getAccessToken(message.interactive);
+      await oauth.clearCachedAuth();
+      const refreshedToken = await oauth.getAccessToken(message.interactive);
       return await syncWithToken(message, refreshedToken);
-    } catch {
-      return { ok: false, message: error.message || "Google Driveの認証が切れています" };
+    } catch (retryError) {
+      return {
+        ok: false,
+        message: toDriveErrorMessage(retryError, "エラー: Google Driveの認証が切れています。"),
+      };
     }
   }
 

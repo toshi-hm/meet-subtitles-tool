@@ -116,12 +116,13 @@ Google Meetの字幕を会議中に蓄積し、あとから読み返しやすい
 
 Meetへのログインと、拡張機能によるDrive書き込み認可は別である。Meetにログイン済みでも、拡張機能がユーザーのDriveへファイルを作成する権限は自動付与されない。
 
-- Chrome拡張機能のIdentity APIを利用し、初回のDrive保存操作に対してOAuth同意を要求する。
+- Chrome拡張機能のIdentity APIのWeb認証フローを利用し、初回のDrive保存操作に対してOAuth同意を要求する。
 - 基本スコープは `https://www.googleapis.com/auth/drive.file` とする。
-- OAuthクライアントID、Google Cloudプロジェクト、Drive API有効化は配布形態に応じて設定する。
+- OAuth Client ID、Google Cloudプロジェクト、Drive API有効化は利用者が拡張機能ポップアップから設定する。
+- OAuth Client IDは拡張機能のポップアップに保存し、Client Secretは要求・保存しない。
 - 同意画面は拡張機能の起動時ではなく、ユーザーがDrive保存を有効化・実行した時だけ表示する。
 - `drive.file` は拡張機能が作成・利用するファイルに限定されるため、全Drive読み書き権限を要求しない。
-- フォルダIDとアクセストークンは字幕本文やログと分離して管理し、アクセストークンを永続ログに保存しない。
+- フォルダID、OAuth Client ID、アクセストークンは字幕本文やログと分離して拡張機能のローカルストレージで管理し、ログに出力しない。
 
 ## 7. 非機能要件
 

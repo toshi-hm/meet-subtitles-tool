@@ -25,7 +25,7 @@ content script ── CaptionObserver ── CaptionRepository (IndexedDB)
 
 - `entrypoints/meet.content.ts`: Meetページへの注入、字幕自動ON、DOM監視、パネル描画。
 - `entrypoints/background.ts`: service worker。認証、Drive API、終了時・定期同期メッセージを処理。
-- `entrypoints/options/`: OAuth状態、保存状態、将来の設定画面。
+- `entrypoints/popup/`: 拡張機能アイコンからOAuth Client IDを入力・保存する設定画面。
 - `src/domain/`: 字幕レコード、整形、重複排除、セッション状態などのブラウザ非依存ロジック。
 - `src/storage/`: IndexedDBリポジトリと拡張機能storageのアダプタ。
 - `src/drive/`: OAuthトークン取得、フォルダ確保、TXTアップロード。
@@ -122,7 +122,7 @@ DOM検出は `MeetSelectors` に集約し、aria-label、role、表示テキス�
 1. Meetページのdocument startでcontent scriptを起動するが、入室済みの退出コントロールが検出されるまでパネルを表示しない。
 2. 入室後、字幕0件でもフローティングパネルを表示する。
 3. パネルの `Drive接続` をユーザーが押すと、content scriptは字幕本文を含まない認証専用runtime messageをservice workerへ送る。
-4. service workerはChrome Identity APIのinteractive OAuthを実行し、成功・失敗だけをcontent scriptへ返す。
+4. service workerは保存済みClient IDでChrome Identity APIのWeb認証フローを実行し、成功・失敗だけをcontent scriptへ返す。
 5. OAuth完了後、パネルの操作を `Drive保存` に切り替える。フォルダ作成は最初の字幕同期時に行う。
 
 ### 8.2 字幕同期
@@ -154,7 +154,7 @@ Content scriptのIndexedDBはMeetページのストレージ境界にあるた�
 
 - `storage`: UI状態、OAuth関連の最小メタデータ、DriveフォルダID。
 - `unlimitedStorage` は必要性を検証してから判断し、初期実装では要求しない。
-- `identity`: Google OAuthトークン取得。
+- `identity`: Google OAuthのWeb認証フロー。
 - Meetのhost permission: `https://meet.google.com/*`。
 
 字幕本文はIndexedDB、OAuth状態やUI設定は拡張機能storageに分ける。不要な `tabs`、`history`、全サイト権限は要求しない。

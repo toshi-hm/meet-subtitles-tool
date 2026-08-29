@@ -9,6 +9,7 @@ Google Meetの字幕を会議中に残し、必要な時点でコピー・TXT保
 - Meet画面内のパネルから、いつでもコピー・TXT保存する
 - パネルを折りたたむ、好きな位置へ移動する
 - 会議終了時にGoogle Driveへ自動保存する
+- 拡張機能のポップアップからGoogle Drive接続設定を行う
 
 ## セットアップ
 
@@ -27,9 +28,21 @@ Google Meetの字幕を会議中に残し、必要な時点でコピー・TXT保
 
 Google Meetへのログインだけでは、拡張機能がGoogle Driveへ書き込む権限は付与されません。初めて `Drive接続` または `Drive保存` を行うときにGoogleの認証画面が表示されるため、保存先と権限を確認して許可してください。
 
+まずブラウザのツールバーにある `Meet Subtitles` アイコンを押し、ポップアップへOAuth Client IDを入力して保存します。入力欄はパスワード表示で、保存後にClient IDの文字列は画面へ表示されません。
+
+OAuth Client IDは公開識別子であり、Client Secretのような秘密情報ではありません。拡張機能のManifestや認証URLにも含まれるため、Client Secretを発行・入力する必要はありません。
+
+発行手順はポップアップ内にも記載しています。
+
+1. [Google Drive APIを有効化](https://console.cloud.google.com/apis/library/drive.googleapis.com)します。
+2. [OAuth同意画面](https://console.cloud.google.com/apis/credentials/consent)を設定し、テストユーザーを追加します。
+3. [認証情報](https://console.cloud.google.com/apis/credentials)で「OAuthクライアントID」→「Chrome拡張機能」を選びます。
+4. `chrome://extensions` または `edge://extensions` に表示される拡張機能IDをアプリケーションIDへ指定します。
+5. 発行されたOAuth Client IDをポップアップへ貼り付けて保存します。
+
 会議に入室した後、Meet Subtitlesパネルの `Drive接続` を押してOAuthを実行できます。字幕本文は送信されず、認証だけが行われます。認証後はボタンが `Drive保存` に変わります。
 
-配布版では必要な認証設定が済んでいます。自分で作成した版で認証設定エラーが表示される場合は、配布元の設定を確認してください。
+OAuth Client IDが未設定の場合は、Meetの `Drive接続` を押しても接続できません。先にポップアップからClient IDを保存してください。
 
 認証後に作成されるファイルは、マイドライブ直下の次のフォルダに保存されます。
 
@@ -41,11 +54,12 @@ Google Meetへのログインだけでは、拡張機能がGoogle Driveへ書き
 
 1. Google Meetの待機画面から会議に入室します。
 2. 入室後、画面内に `Meet Subtitles` パネルが表示され、字幕が自動でONになります。
-3. 初回はパネルの `Drive接続` を押し、Googleの認証画面で許可します。
-4. 会議中は字幕が自動的に蓄積されます。パネルには保存件数が表示されます。
-5. 必要な時点で `コピー` または `TXT保存` を押します。
-6. パネルを小さくしたいときは、右上の `−` を押します。ヘッダーをドラッグすると位置を移動できます。右下のリサイズハンドルをドラッグすると幅・高さを変更できます。
-7. Drive認証済みの場合、退出・会議終了・Meetページからの遷移時に字幕がGoogle Driveへ保存されます。
+3. Drive保存を使う場合は、先に拡張機能アイコンのポップアップへOAuth Client IDを保存します。
+4. 初回はパネルの `Drive接続` を押し、Googleの認証画面で許可します。
+5. 会議中は字幕が自動的に蓄積されます。パネルには保存件数が表示されます。
+6. 必要な時点で `コピー` または `TXT保存` を押します。
+7. パネルを小さくしたいときは、右上の `−` を押します。ヘッダーをドラッグすると位置を移動できます。右下のリサイズハンドルをドラッグすると幅・高さを変更できます。
+8. Drive認証済みの場合、退出・会議終了・Meetページからの遷移時に字幕がGoogle Driveへ保存されます。
 
 ![Meet Subtitlesパネルの操作イメージ](docs/images/panel-guide.svg)
 
@@ -83,6 +97,8 @@ Meetの字幕欄に表示名が提供されない場合は、メールアドレ�
 ### Google Driveへ保存されない
 
 初回の `Drive接続` または `Drive保存` でGoogleの認証を許可したか確認してください。認証や通信に失敗しても、字幕はブラウザ内に残るため、会議終了後に再度 `Drive保存` を実行できます。
+
+`bad client id` などのエラーが表示された場合は、拡張機能アイコンのポップアップでOAuth Client IDを保存し直してください。設定がない場合は「エラー: OAuth Client IDを設定してください。」と表示されます。
 
 ### タブを切り替えたら保存処理が始まらない
 

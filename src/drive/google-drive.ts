@@ -3,11 +3,6 @@ export const MEET_SUBTITLES_FOLDER_NAME = "Meet Subtitles";
 const DRIVE_API_BASE = "https://www.googleapis.com/drive/v3";
 const DRIVE_UPLOAD_BASE = "https://www.googleapis.com/upload/drive/v3";
 
-export type IdentityProvider = {
-  getAuthToken: (details?: { interactive?: boolean }) => Promise<{ token?: string }>;
-  removeCachedAuthToken: (details: { token: string }) => Promise<void>;
-};
-
 export type DriveFile = {
   id: string;
   name?: string;
@@ -36,17 +31,7 @@ async function readError(response: Response): Promise<string> {
 }
 
 export class GoogleDriveClient {
-  constructor(
-    private readonly fetcher: Fetcher = fetch,
-    private readonly identity?: IdentityProvider,
-  ) {}
-
-  async getAccessToken(interactive: boolean): Promise<string> {
-    if (!this.identity) throw new Error("Google Drive認証が設定されていません");
-    const result = await this.identity.getAuthToken({ interactive });
-    if (!result.token) throw new Error("Google Driveのアクセストークンを取得できませんでした");
-    return result.token;
-  }
+  constructor(private readonly fetcher: Fetcher = fetch) {}
 
   async ensureFolder(accessToken: string): Promise<string> {
     const query = [
