@@ -1,17 +1,30 @@
 import type { CaptionCandidate } from "../domain/types";
 
-const CAPTION_ROOT_SELECTORS = ["[data-meet-captions]", ".a4cQT", '[jsname="tgaKEf"]'];
+const CAPTION_ROOT_SELECTORS = [
+  '[role="region"][aria-label="字幕"]',
+  '[role="region"][aria-label="Captions"]',
+  "[data-meet-captions]",
+];
 
 const CAPTION_ENTRY_SELECTORS = [
+  ".nMcdL",
   "[data-caption-entry]",
   "[data-caption]",
   "[data-caption-text]",
   ".caption-entry",
   '[jsname="tgaKEf"] [role="text"]',
-  '.a4cQT [role="text"]',
 ];
 
 const CAPTION_TOGGLE_SELECTORS = ["button", '[role="button"]'];
+const NON_CAPTION_ANCESTOR_SELECTORS = [
+  '[role="dialog"]',
+  '[role="listbox"]',
+  '[role="menu"]',
+  '[role="menuitem"]',
+  '[role="option"]',
+  '[role="combobox"]',
+  '[aria-modal="true"]',
+].join(",");
 
 export type CaptionToggleState = "on" | "off" | "unknown";
 
@@ -29,10 +42,19 @@ export function findCaptionRoots(document: Document): Element[] {
 
 function findEntryElements(root: Element): Element[] {
   for (const selector of CAPTION_ENTRY_SELECTORS) {
-    const elements = [...root.querySelectorAll(selector)];
+    const elements = [...root.querySelectorAll(selector)].filter(isCaptionEntryElement);
     if (elements.length > 0) return elements;
   }
-  return [...root.children].filter((element) => element.textContent?.trim());
+  return [...root.children].filter(
+    (element) => isCaptionEntryElement(element) && element.textContent?.trim(),
+  );
+}
+
+function isCaptionEntryElement(element: Element): boolean {
+  if (element.matches(NON_CAPTION_ANCESTOR_SELECTORS)) return false;
+  if (element.closest(NON_CAPTION_ANCESTOR_SELECTORS)) return false;
+  if (element.matches('button, a, input, select, textarea, [role="button"]')) return false;
+  return true;
 }
 
 function readAttribute(element: Element, names: string[]): string | undefined {
@@ -46,8 +68,26 @@ function readAttribute(element: Element, names: string[]): string | undefined {
 function readText(element: Element): string {
   const textElement = element.matches("[data-caption-text]")
     ? element
-    : element.querySelector('[data-caption-text], .caption-text, [role="text"]');
-  return (textElement ?? element).textContent?.trim() ?? "";
+    : element.querySelector('[data-caption-text], .ygicle, .caption-text, [role="text"]');
+  const source = textElement ?? element;
+  const clone = source.cloneNode(true) as Element;
+  clone
+    .querySelectorAll('button, a, input, select, textarea, [role="button"]')
+    .forEach((child) => child.remove());
+  return clone.textContent?.trim() ?? "";
+}
+
+function getSelfSpeakerName(document: Document): string {
+  const lines = (document.body?.innerText ?? document.body?.textContent ?? "").split(/\n+/);
+  const ownAccountLine = lines.find((line) => /として参加中|joined as/i.test(line));
+  const ownAccount = ownAccountLine?.replace(/\s*(?:として参加中|joined as).*$/i, "").trim();
+  return ownAccount && ownAccount.length <= 100 ? ownAccount : "自分";
+}
+
+function resolveSpeakerName(parent: Element, speaker: string | undefined): string {
+  const value = speaker?.trim() || "不明な話者";
+  if (!/^(あなた|you)$/i.test(value)) return value;
+  return getSelfSpeakerName(parent.ownerDocument);
 }
 
 export function extractCaptionCandidates(root: Element, occurredAt: number): CaptionCandidate[] {
@@ -57,10 +97,13 @@ export function extractCaptionCandidates(root: Element, occurredAt: number): Cap
       const sourceKey =
         readAttribute(parent, ["data-source-key", "data-caption-id", "data-message-id", "id"]) ??
         `caption-${index}`;
-      const speaker =
+      const rawSpeaker =
         readAttribute(parent, ["data-speaker", "data-caption-speaker"]) ??
-        parent.querySelector("[data-caption-speaker], .caption-speaker")?.textContent?.trim() ??
+        parent
+          .querySelector("[data-caption-speaker], .NWpY1d, .caption-speaker")
+          ?.textContent?.trim() ??
         "不明な話者";
+      const speaker = resolveSpeakerName(parent, rawSpeaker);
 
       return { sourceKey, speaker, text: readText(element), occurredAt };
     })

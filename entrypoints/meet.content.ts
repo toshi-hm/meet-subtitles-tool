@@ -9,7 +9,7 @@ import {
 } from "../src/drive/messages";
 import { enableCaptions, getMeetingKey } from "../src/meet/caption-dom";
 import { MeetCaptionObserver } from "../src/meet/caption-observer";
-import { MeetingLifecycleObserver } from "../src/meet/meeting-lifecycle";
+import { isMeetingJoined, MeetingLifecycleObserver } from "../src/meet/meeting-lifecycle";
 import { SubtitleRepository } from "../src/storage/indexed-db";
 import { FloatingPanel } from "../src/ui/floating-panel";
 
@@ -26,10 +26,23 @@ function downloadText(document: Document, text: string, filename: string): void 
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
+function waitForJoinedMeeting(document: Document): Promise<void> {
+  return new Promise((resolve) => {
+    const check = (): void => {
+      if (!isMeetingJoined(document)) return;
+      window.clearInterval(interval);
+      resolve();
+    };
+    const interval = window.setInterval(check, 500);
+    check();
+  });
+}
+
 export default defineContentScript({
   matches: ["https://meet.google.com/*"],
   runAt: "document_start",
   async main(ctx) {
+    await waitForJoinedMeeting(document);
     const repository = new SubtitleRepository();
     const meetingKey = getMeetingKey(window.location);
     const existingSession = await repository.findActiveSession(meetingKey);
@@ -113,6 +126,22 @@ export default defineContentScript({
     panel.update("initialising", existingEntries.length);
     panel.setDriveActionLabel(existingEntries.length > 0 ? "Drive保存" : "Drive接続");
 
+    const finishSession = (): void => {
+      if (session.status !== "active") return;
+      session.status = "ending";
+      void repository.saveSession(session);
+      panel.update("saving", accumulator.getEntries().length);
+      panel.destroy();
+      void requestDriveSync(false).catch(() => undefined);
+    };
+    const lifecycle = new MeetingLifecycleObserver({
+      document,
+      onEnd: finishSession,
+    });
+    lifecycle.start();
+    ctx.addEventListener(window, "pagehide", finishSession);
+    ctx.addEventListener(window, "beforeunload", finishSession);
+
     const start = (): void => {
       let observerStarted = false;
       const tryEnableCaptions = (): void => {
@@ -140,24 +169,6 @@ export default defineContentScript({
           },
         });
         observer.start();
-        const finishSession = (): void => {
-          if (session.status === "completed") return;
-          session.status = "ending";
-          void repository.saveSession(session);
-          panel.update("saving", accumulator.getEntries().length);
-          void requestDriveSync(false).catch(() => undefined);
-        };
-        const lifecycle = new MeetingLifecycleObserver({
-          document,
-          onEnd: finishSession,
-        });
-        lifecycle.start();
-        ctx.addEventListener(window, "pagehide", () => {
-          finishSession();
-        });
-        ctx.addEventListener(window, "beforeunload", () => {
-          finishSession();
-        });
       };
 
       tryEnableCaptions();

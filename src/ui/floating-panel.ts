@@ -19,7 +19,7 @@ const HOST_ID = "meet-subtitles-floating-panel";
 
 const styles = `
   :host { all: initial; color-scheme: light; font-family: Arial, sans-serif; }
-  .panel { position: fixed; z-index: 2147483647; width: min(360px, calc(100vw - 24px)); color: #172033; background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 8px 28px rgb(15 23 42 / 20%); }
+  .panel { position: fixed; z-index: 2147483647; width: min(360px, calc(100vw - 24px)); min-width: 280px; max-width: calc(100vw - 16px); min-height: 120px; max-height: calc(100vh - 16px); resize: both; overflow: auto; color: #172033; background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 8px 28px rgb(15 23 42 / 20%); }
   .header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; cursor: grab; border-bottom: 1px solid #e2e8f0; }
   .header:active { cursor: grabbing; }
   .title { flex: 1; font-size: 14px; font-weight: 700; }
@@ -30,8 +30,9 @@ const styles = `
   .dot { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; }
   .dot[data-active="true"] { background: #16a34a; }
   .actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-  button { min-height: 32px; border: 1px solid #cbd5e1; border-radius: 7px; color: #1e293b; background: #f8fafc; font: inherit; font-size: 12px; cursor: pointer; }
-  button:hover { background: #e2e8f0; }
+  button { min-height: 32px; border: 1px solid #000048; border-radius: 7px; color: #fff; background: #000048; font: inherit; font-size: 12px; cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease; }
+  button:hover { border-color: #24246d; background: #24246d; }
+  button:active { border-color: #5f5fa3; background: #5f5fa3; }
   button:focus-visible { outline: 3px solid #60a5fa; outline-offset: 2px; }
   .notice { min-height: 16px; margin: 0; color: #2563eb; font-size: 11px; }
   [hidden] { display: none; }
