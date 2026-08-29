@@ -73,6 +73,17 @@ export class SubtitleRepository {
     return requestToPromise(transaction.objectStore("sessions").get(sessionId));
   }
 
+  async findActiveSession(meetingKey: string): Promise<MeetingSession | undefined> {
+    const database = await this.open();
+    const transaction = database.transaction("sessions", "readonly");
+    const sessions = await requestToPromise<MeetingSession[]>(
+      transaction.objectStore("sessions").index("byMeetingKey").getAll(meetingKey),
+    );
+    return sessions
+      .filter((session) => session.status === "active" || session.status === "ending")
+      .sort((left, right) => right.startedAt - left.startedAt)[0];
+  }
+
   async saveEntry(entry: SubtitleEntry): Promise<void> {
     const database = await this.open();
     const transaction = database.transaction(["sessions", "entries"], "readwrite");
