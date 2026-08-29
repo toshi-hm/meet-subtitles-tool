@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Meet Subtitles</title>
+  <desc id="desc">白い字幕記号が入った青い吹き出し</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2563eb" />
+      <stop offset="1" stop-color="#0f172a" />
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#background)" />
+  <path d="M24 25c0-6.075 4.925-11 11-11h58c6.075 0 11 4.925 11 11v43c0 6.075-4.925 11-11 11H65l-18 18v-18H35c-6.075 0-11-4.925-11-11V25Z" fill="#fff" opacity=".96" />
+  <path d="M38 38h11v28H38V38Zm17 0h11v28H55V38Zm17 0h11v28H72V38Z" fill="#2563eb" />
+  <path d="M37 75h54" stroke="#0f172a" stroke-width="5" stroke-linecap="round" opacity=".75" />
+</svg>
