@@ -1,6 +1,6 @@
 import { CaptionAccumulator } from "../src/domain/caption-accumulator";
 import { createTranscriptFilename, formatTranscript } from "../src/domain/transcript";
-import type { MeetingSession } from "../src/domain/types";
+import { SESSION_RETENTION_MS, type MeetingSession } from "../src/domain/types";
 import {
   DRIVE_AUTH_MESSAGE,
   DRIVE_SYNC_MESSAGE,
@@ -42,18 +42,26 @@ export default defineContentScript({
   matches: ["https://meet.google.com/*"],
   runAt: "document_start",
   async main(ctx) {
-    await waitForJoinedMeeting(document);
     const repository = new SubtitleRepository();
+    let currentSessionId: string | undefined;
+    await repository.deleteExpiredSessions().catch(() => undefined);
+    ctx.setInterval(() => {
+      void repository.deleteExpiredSessions(Date.now(), currentSessionId).catch(() => undefined);
+    }, 60_000);
+    await waitForJoinedMeeting(document);
     const meetingKey = getMeetingKey(window.location);
     const existingSession = await repository.findActiveSession(meetingKey);
     const existingEntries = existingSession ? await repository.listEntries(existingSession.id) : [];
+    const sessionStartedAt = Date.now();
     const session: MeetingSession = existingSession ?? {
       id: createSessionId(),
       meetingKey,
-      startedAt: Date.now(),
-      lastCapturedAt: Date.now(),
+      startedAt: sessionStartedAt,
+      retentionExpiresAt: sessionStartedAt + SESSION_RETENTION_MS,
+      lastCapturedAt: sessionStartedAt,
       status: "active",
     };
+    currentSessionId = session.id;
     await repository.saveSession(session);
     const accumulator = new CaptionAccumulator(session.id, existingEntries.length, existingEntries);
 
@@ -128,6 +136,7 @@ export default defineContentScript({
 
     const finishSession = (): void => {
       if (session.status !== "active") return;
+      currentSessionId = undefined;
       session.status = "ending";
       void repository.saveSession(session);
       panel.update("saving", accumulator.getEntries().length);

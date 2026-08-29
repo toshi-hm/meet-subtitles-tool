@@ -42,6 +42,7 @@ type MeetingSession = {
   id: string;
   meetingKey: string;
   startedAt: number;
+  retentionExpiresAt: number;
   lastCapturedAt: number;
   status: 'active' | 'ending' | 'completed' | 'sync-failed';
   driveFileId?: string;
@@ -87,6 +88,8 @@ DOM検出は `MeetSelectors` に集約し、aria-label、role、表示テキス�
 - `syncQueue`: `sessionId`を主キー、`state`と`updatedAt`にインデックス。
 
 字幕の追加とセッションの更新は同一トランザクションで行う。UIは常にIndexedDBから読み直せるようにし、メモリ配列だけを正としない。
+
+セッション作成時に `retentionExpiresAt = startedAt + 24時間` を設定する。Meetページ起動時とページ表示中の定期処理で期限を確認し、期限切れのセッション、関連する `entries`、`syncQueue` を同一readwriteトランザクションで削除する。旧形式で期限がないセッションは `startedAt + 24時間` を期限として扱う。
 
 ## 6. パネルUI
 

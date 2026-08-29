@@ -1,9 +1,12 @@
 export type SessionStatus = "active" | "ending" | "completed" | "sync-failed";
 
+export const SESSION_RETENTION_MS = 24 * 60 * 60 * 1000;
+
 export type MeetingSession = {
   id: string;
   meetingKey: string;
   startedAt: number;
+  retentionExpiresAt: number;
   lastCapturedAt: number;
   status: SessionStatus;
   driveFileId?: string;
