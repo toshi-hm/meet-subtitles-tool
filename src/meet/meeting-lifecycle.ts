@@ -21,6 +21,12 @@ function isLeaveLabel(label: string): boolean {
   return /leave call|leave meeting|退出|退室/.test(label);
 }
 
+export function isMeetingJoined(document: Document): boolean {
+  return [...document.querySelectorAll('button, [role="button"]')].some((element) =>
+    isLeaveLabel(elementLabel(element)),
+  );
+}
+
 function isMeetingEndedText(text: string): boolean {
   return /you(?:'|’)?ve left the meeting|meeting has ended|会議が終了|退出しました|会議から退出/.test(
     text.toLocaleLowerCase(),

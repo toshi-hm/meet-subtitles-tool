@@ -1,8 +1,18 @@
 import { Window } from "happy-dom";
 import { describe, expect, it } from "vitest";
-import { MeetingLifecycleObserver } from "./meeting-lifecycle";
+import { isMeetingJoined, MeetingLifecycleObserver } from "./meeting-lifecycle";
 
 describe("meeting lifecycle", () => {
+  it("recognises an entered meeting from the leave control", () => {
+    const window = new Window();
+    expect(isMeetingJoined(window.document as unknown as Document)).toBe(false);
+    const button = window.document.createElement("button");
+    button.setAttribute("aria-label", "Leave call");
+    window.document.body.append(button);
+
+    expect(isMeetingJoined(window.document as unknown as Document)).toBe(true);
+  });
+
   it("detects a leave button click once", () => {
     const window = new Window();
     const button = window.document.createElement("button");
