@@ -20,6 +20,20 @@
 
 Meetの認証だけに依存すると、拡張機能がDriveへ書き込める権限の境界を明示できない。ユーザーに保存先と権限を説明して同意を得る方が安全である。また、全Drive権限より `drive.file` の方が最小権限で要件を満たしやすい。
 
+## 2026-08-29: OAuth Client IDの設定
+
+### OAuth Client IDの事象
+
+OAuth Client IDの未設定時に、Chrome Identity APIの `bad client id` エラーがそのまま利用者へ表示されていた。
+
+### OAuth Client IDの判断
+
+Manifestへ未設定のClient IDを埋め込む方式をやめ、拡張機能ポップアップでClient IDを入力・保存し、service workerのWeb認証フローで利用する。Client IDはパスワード入力欄で表示を隠すが、秘密情報としては扱わず、Client Secretは要求しない。OAuthエラーは日本語の設定案内へ変換する。
+
+### OAuth Client IDの理由
+
+OAuth Client IDは公開識別子であり、拡張機能のManifestや認証URLに含まれる。一方、未設定時の生エラーは利用者に原因と対処を伝えないため、ポップアップに設定手順を集約し、認証失敗時の表示を安全な日本語メッセージに統一する。
+
 ## 2026-08-29: 待機画面のOAuth
 
 ### 要望
