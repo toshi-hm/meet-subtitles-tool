@@ -91,7 +91,27 @@ describe("caption DOM adapter", () => {
     ]);
   });
 
-  it("replaces the self label with the account label when Meet exposes it", () => {
+  it("uses the display name when Meet exposes it", () => {
+    const window = new Window();
+    window.document.body.innerHTML = '<div data-display-name="Toshi Yamada"></div>';
+    const root = window.document.createElement("div");
+    root.setAttribute("role", "region");
+    root.setAttribute("aria-label", "字幕");
+    root.innerHTML =
+      '<div class="nMcdL"><span class="NWpY1d">あなた</span><div class="ygicle">はい、こんにちは。</div></div>';
+    window.document.body.append(root);
+
+    expect(extractCaptionCandidates(root as unknown as Element, 1_000)).toEqual([
+      {
+        sourceKey: "caption-0",
+        speaker: "Toshi Yamada",
+        text: "はい、こんにちは。",
+        occurredAt: 1_000,
+      },
+    ]);
+  });
+
+  it("never uses the account email as the self speaker name", () => {
     const window = new Window();
     window.document.body.innerHTML = "toshiyahmwork@gmail.com として参加中";
     const root = window.document.createElement("div");
@@ -104,7 +124,28 @@ describe("caption DOM adapter", () => {
     expect(extractCaptionCandidates(root as unknown as Element, 1_000)).toEqual([
       {
         sourceKey: "caption-0",
-        speaker: "toshiyahmwork@gmail.com",
+        speaker: "自分",
+        text: "はい、こんにちは。",
+        occurredAt: 1_000,
+      },
+    ]);
+  });
+
+  it("extracts a display name from a self-labelled Meet element", () => {
+    const window = new Window();
+    const selfTile = window.document.createElement("div");
+    selfTile.setAttribute("aria-label", "あなた: Toshi Yamada");
+    window.document.body.append(selfTile);
+    const root = window.document.createElement("div");
+    root.setAttribute("role", "region");
+    root.setAttribute("aria-label", "字幕");
+    root.innerHTML =
+      '<div class="nMcdL"><span class="NWpY1d">あなた</span><div class="ygicle">はい、こんにちは。</div></div>';
+
+    expect(extractCaptionCandidates(root as unknown as Element, 1_000)).toEqual([
+      {
+        sourceKey: "caption-0",
+        speaker: "Toshi Yamada",
         text: "はい、こんにちは。",
         occurredAt: 1_000,
       },
