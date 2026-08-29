@@ -14,7 +14,12 @@ export class CaptionAccumulator {
   constructor(
     private readonly sessionId: string,
     private nextSequence = 0,
-  ) {}
+    existingEntries: SubtitleEntry[] = [],
+  ) {
+    for (const entry of existingEntries) {
+      this.entries.set(entry.sourceKey, entry);
+    }
+  }
 
   upsert(candidate: CaptionCandidate): SubtitleEntry {
     const text = normaliseCaptionText(candidate.text);
