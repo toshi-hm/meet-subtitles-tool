@@ -1,6 +1,11 @@
 import { createTranscriptFilename, formatTranscript } from "../src/domain/transcript";
 import {
+  DRIVE_AUTH_MESSAGE,
   DRIVE_SYNC_MESSAGE,
+  type DriveAuthMessage,
+  type DriveAuthResponse,
+  type DriveMessage,
+  type DriveResponse,
   type DriveSyncMessage,
   type DriveSyncResponse,
 } from "../src/drive/messages";
@@ -15,11 +20,24 @@ export default defineBackground(() => {
   const drive = new GoogleDriveClient(fetch, identity);
 
   browser.runtime.onMessage.addListener(
-    (message: DriveSyncMessage): Promise<DriveSyncResponse> | undefined => {
+    (message: DriveMessage): Promise<DriveResponse> | undefined => {
+      if (message?.type === DRIVE_AUTH_MESSAGE) return authenticateDrive(message);
       if (message?.type !== DRIVE_SYNC_MESSAGE) return undefined;
       return syncToDrive(message);
     },
   );
+
+  async function authenticateDrive(message: DriveAuthMessage): Promise<DriveAuthResponse> {
+    try {
+      await drive.getAccessToken(message.interactive);
+      return { ok: true };
+    } catch (error) {
+      return {
+        ok: false,
+        message: error instanceof Error ? error.message : "Google Driveに接続できませんでした",
+      };
+    }
+  }
 
   async function syncToDrive(message: DriveSyncMessage): Promise<DriveSyncResponse> {
     try {

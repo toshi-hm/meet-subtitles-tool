@@ -9,6 +9,17 @@ function jsonResponse(body: unknown, status = 200): Response {
 }
 
 describe("GoogleDriveClient", () => {
+  it("gets an interactive OAuth token when requested", async () => {
+    const identity = {
+      getAuthToken: vi.fn().mockResolvedValue({ token: "token" }),
+      removeCachedAuthToken: vi.fn().mockResolvedValue(undefined),
+    };
+    const client = new GoogleDriveClient(fetch, identity);
+
+    await expect(client.getAccessToken(true)).resolves.toBe("token");
+    expect(identity.getAuthToken).toHaveBeenCalledWith({ interactive: true });
+  });
+
   it("finds an existing folder or creates it under My Drive", async () => {
     const fetcher = vi
       .fn<typeof fetch>()
