@@ -114,14 +114,22 @@ DOM検出は `MeetSelectors` に集約し、aria-label、role、表示テキス�
 
 ## 8. Drive同期
 
-1. ユーザー操作でOAuthトークンを取得する。
-2. content scriptがIndexedDBから字幕スナップショットを読み出す。
-3. runtime messageで字幕スナップショットをservice workerへ渡す。
-4. 保存済みのフォルダIDがあれば存在確認する。
-5. なければ `Meet Subtitles` フォルダを作成し、IDを拡張機能storageへ保存する。
-6. `text/plain` のTXTファイルを作成する。
-7. セッションの `driveFileId` と同期時刻をcontent script側のIndexedDBへ保存する。
-8. 再同期時は同じDriveファイルを更新し、終了時に最新内容へする。
+### 8.1 待機画面のOAuth
+
+1. Meetページのdocument startでcontent scriptを起動し、字幕0件の状態でもフローティングパネルを表示する。
+2. パネルの `Drive接続` をユーザーが押すと、content scriptは字幕本文を含まない認証専用runtime messageをservice workerへ送る。
+3. service workerはChrome Identity APIのinteractive OAuthを実行し、成功・失敗だけをcontent scriptへ返す。
+4. OAuth完了後、パネルの操作を `Drive保存` に切り替える。フォルダ作成は最初の字幕同期時に行う。
+
+### 8.2 字幕同期
+
+1. content scriptがIndexedDBから字幕スナップショットを読み出す。
+2. runtime messageで字幕スナップショットをservice workerへ渡す。
+3. 保存済みのフォルダIDがあれば存在確認する。
+4. なければ `Meet Subtitles` フォルダを作成し、IDを拡張機能storageへ保存する。
+5. `text/plain` のTXTファイルを作成する。
+6. セッションの `driveFileId` と同期時刻をcontent script側のIndexedDBへ保存する。
+7. 再同期時は同じDriveファイルを更新し、終了時に最新内容へする。
 
 Content scriptのIndexedDBはMeetページのストレージ境界にあるため、service workerと直接共有しない。service workerはruntime messageで受け取ったスナップショットをDriveへ送信し、次回のMeet起動時はcontent script側の未同期キューを再利用する。
 

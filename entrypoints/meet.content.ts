@@ -1,7 +1,12 @@
 import { CaptionAccumulator } from "../src/domain/caption-accumulator";
 import { createTranscriptFilename, formatTranscript } from "../src/domain/transcript";
 import type { MeetingSession } from "../src/domain/types";
-import { DRIVE_SYNC_MESSAGE, type DriveSyncResponse } from "../src/drive/messages";
+import {
+  DRIVE_AUTH_MESSAGE,
+  DRIVE_SYNC_MESSAGE,
+  type DriveAuthResponse,
+  type DriveSyncResponse,
+} from "../src/drive/messages";
 import { enableCaptions, getMeetingKey } from "../src/meet/caption-dom";
 import { MeetCaptionObserver } from "../src/meet/caption-observer";
 import { MeetingLifecycleObserver } from "../src/meet/meeting-lifecycle";
@@ -38,6 +43,24 @@ export default defineContentScript({
     };
     await repository.saveSession(session);
     const accumulator = new CaptionAccumulator(session.id, existingEntries.length, existingEntries);
+
+    const connectDrive = async (): Promise<void> => {
+      panel.update("authenticating", (await repository.listEntries(session.id)).length);
+      try {
+        const response = (await browser.runtime.sendMessage({
+          type: DRIVE_AUTH_MESSAGE,
+          interactive: true,
+        })) as DriveAuthResponse;
+        if (!response?.ok)
+          throw new Error(response?.message ?? "Google Driveに接続できませんでした");
+        panel.setDriveActionLabel("Drive保存");
+        panel.update("saved", (await repository.listEntries(session.id)).length);
+        panel.notify("Google Driveに接続しました。会議終了時に自動保存します");
+      } catch (error) {
+        panel.update("error", (await repository.listEntries(session.id)).length);
+        throw error;
+      }
+    };
 
     const requestDriveSync = async (interactive: boolean): Promise<void> => {
       const entries = await repository.listEntries(session.id);
@@ -79,11 +102,16 @@ export default defineContentScript({
         panel.notify("TXTファイルを保存しました");
       },
       onDrive: async () => {
+        if ((await repository.listEntries(session.id)).length === 0) {
+          await connectDrive();
+          return;
+        }
         await requestDriveSync(true);
         panel.notify("Google Driveに保存しました");
       },
     });
     panel.update("initialising", existingEntries.length);
+    panel.setDriveActionLabel(existingEntries.length > 0 ? "Drive保存" : "Drive接続");
 
     const start = (): void => {
       let observerStarted = false;
@@ -101,6 +129,7 @@ export default defineContentScript({
           onCaption: (candidate) => {
             const entry = accumulator.upsert(candidate);
             void repository.saveEntry(entry).then(async () => {
+              panel.setDriveActionLabel("Drive保存");
               panel.update("capturing", accumulator.getEntries().length);
               await repository.saveSyncQueue({
                 sessionId: session.id,

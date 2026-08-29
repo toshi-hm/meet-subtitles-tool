@@ -1,4 +1,11 @@
-export type PanelStatus = "initialising" | "waiting" | "capturing" | "saving" | "saved" | "error";
+export type PanelStatus =
+  | "initialising"
+  | "waiting"
+  | "authenticating"
+  | "capturing"
+  | "saving"
+  | "saved"
+  | "error";
 
 export type FloatingPanelHandlers = {
   onCopy: () => Promise<void>;
@@ -39,6 +46,7 @@ export class FloatingPanel {
   private readonly dot: HTMLSpanElement;
   private readonly count: HTMLSpanElement;
   private readonly notice: HTMLParagraphElement;
+  private readonly driveButton: HTMLButtonElement;
   private collapsed = false;
   private dragState?: { offsetX: number; offsetY: number };
 
@@ -51,13 +59,14 @@ export class FloatingPanel {
     this.host = document.createElement("div");
     this.host.id = HOST_ID;
     this.shadow = this.host.attachShadow({ mode: "open" });
-    this.shadow.innerHTML = `<style>${styles}</style><section class="panel" role="region" aria-label="Meet Subtitles"><header class="header"><span class="title">Meet Subtitles</span><span class="count" aria-live="polite">0件</span><button class="collapse" type="button" aria-label="字幕パネルを折りたたむ" aria-expanded="true">−</button></header><div class="body"><p class="status" role="status"><span class="dot" aria-hidden="true"></span><span>準備しています</span></p><div class="actions"><button type="button" data-action="copy">コピー</button><button type="button" data-action="download">TXT保存</button><button type="button" data-action="drive">Drive保存</button></div><p class="notice" role="status" aria-live="polite"></p></div></section>`;
+    this.shadow.innerHTML = `<style>${styles}</style><section class="panel" role="region" aria-label="Meet Subtitles"><header class="header"><span class="title">Meet Subtitles</span><span class="count" aria-live="polite">0件</span><button class="collapse" type="button" aria-label="字幕パネルを折りたたむ" aria-expanded="true">−</button></header><div class="body"><p class="status" role="status"><span class="dot" aria-hidden="true"></span><span>準備しています</span></p><div class="actions"><button type="button" data-action="copy">コピー</button><button type="button" data-action="download">TXT保存</button><button type="button" data-action="drive">Drive接続</button></div><p class="notice" role="status" aria-live="polite"></p></div></section>`;
     this.panel = this.shadow.querySelector(".panel") as HTMLDivElement;
     this.body = this.shadow.querySelector(".body") as HTMLDivElement;
     this.status = this.shadow.querySelector(".status span:last-child") as HTMLSpanElement;
     this.dot = this.shadow.querySelector(".dot") as HTMLSpanElement;
     this.count = this.shadow.querySelector(".count") as HTMLSpanElement;
     this.notice = this.shadow.querySelector(".notice") as HTMLParagraphElement;
+    this.driveButton = this.shadow.querySelector('[data-action="drive"]') as HTMLButtonElement;
     this.setPosition(position);
     this.bindEvents();
     (document.body ?? document.documentElement).append(this.host);
@@ -67,18 +76,25 @@ export class FloatingPanel {
     const labels: Record<PanelStatus, string> = {
       initialising: "準備しています",
       waiting: "字幕をONにしています",
+      authenticating: "Google Driveに接続しています",
       capturing: "字幕取得中",
       saving: "保存中",
       saved: "保存しました",
       error: "エラーが発生しました",
     };
     this.status.textContent = labels[status];
-    this.dot.dataset.active = String(status === "capturing" || status === "saving");
+    this.dot.dataset.active = String(
+      status === "capturing" || status === "saving" || status === "authenticating",
+    );
     this.count.textContent = `${count}件`;
   }
 
   notify(message: string): void {
     this.notice.textContent = message;
+  }
+
+  setDriveActionLabel(label: "Drive接続" | "Drive保存"): void {
+    this.driveButton.textContent = label;
   }
 
   getPosition(): PanelPosition {
