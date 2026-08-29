@@ -77,11 +77,44 @@ function readText(element: Element): string {
   return clone.textContent?.trim() ?? "";
 }
 
+const EMAIL_ADDRESS_PATTERN = /^[^\s@]+@[^\s@]+$/;
+const GENERIC_SELF_LABEL_PATTERN = /^(あなた|you|自分)$/i;
+
+function isDisplayNameCandidate(value: string | undefined): value is string {
+  const candidate = value?.trim();
+  return Boolean(
+    candidate &&
+    candidate.length <= 100 &&
+    !EMAIL_ADDRESS_PATTERN.test(candidate) &&
+    !GENERIC_SELF_LABEL_PATTERN.test(candidate),
+  );
+}
+
+function getExplicitSelfDisplayName(document: Document): string | undefined {
+  const explicitName = document.querySelector("[data-display-name], [data-participant-name]");
+  const explicitValue = explicitName
+    ? (readAttribute(explicitName, ["data-display-name", "data-participant-name"]) ??
+      explicitName.textContent?.trim())
+    : undefined;
+  if (isDisplayNameCandidate(explicitValue)) return explicitValue;
+
+  for (const element of document.querySelectorAll("[aria-label], [data-tooltip], [title]")) {
+    const label = readAttribute(element, ["aria-label", "data-tooltip", "title"]);
+    const match = label?.match(/^(?:あなた|you)\s*[:：,、-]\s*(.+)$/i);
+    if (isDisplayNameCandidate(match?.[1])) return match[1].trim();
+  }
+
+  return undefined;
+}
+
 function getSelfSpeakerName(document: Document): string {
   const lines = (document.body?.innerText ?? document.body?.textContent ?? "").split(/\n+/);
   const ownAccountLine = lines.find((line) => /として参加中|joined as/i.test(line));
   const ownAccount = ownAccountLine?.replace(/\s*(?:として参加中|joined as).*$/i, "").trim();
-  return ownAccount && ownAccount.length <= 100 ? ownAccount : "自分";
+  return (
+    getExplicitSelfDisplayName(document) ??
+    (isDisplayNameCandidate(ownAccount) ? ownAccount : "自分")
+  );
 }
 
 function resolveSpeakerName(parent: Element, speaker: string | undefined): string {
