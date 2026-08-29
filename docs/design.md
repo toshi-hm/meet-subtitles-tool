@@ -90,7 +90,7 @@ DOM検出は `MeetSelectors` に集約し、aria-label、role、表示テキス�
 
 ## 6. パネルUI
 
-初期位置はMeetの主要コントロールと競合しにくい右上とする。利用者が移動した座標は拡張機能storageへ保存し、次回も復元する。
+入室後の初期位置はMeetの主要コントロールと競合しにくい右上とする。利用者が移動した座標は拡張機能storageへ保存し、次回も復元する。パネルはCSSのresize機能で幅・高さを変更できる。
 
 ```text
 ┌ Meet Subtitles                         ┐
@@ -114,12 +114,13 @@ DOM検出は `MeetSelectors` に集約し、aria-label、role、表示テキス�
 
 ## 8. Drive同期
 
-### 8.1 待機画面のOAuth
+### 8.1 会議中のOAuth
 
-1. Meetページのdocument startでcontent scriptを起動し、字幕0件の状態でもフローティングパネルを表示する。
-2. パネルの `Drive接続` をユーザーが押すと、content scriptは字幕本文を含まない認証専用runtime messageをservice workerへ送る。
-3. service workerはChrome Identity APIのinteractive OAuthを実行し、成功・失敗だけをcontent scriptへ返す。
-4. OAuth完了後、パネルの操作を `Drive保存` に切り替える。フォルダ作成は最初の字幕同期時に行う。
+1. Meetページのdocument startでcontent scriptを起動するが、入室済みの退出コントロールが検出されるまでパネルを表示しない。
+2. 入室後、字幕0件でもフローティングパネルを表示する。
+3. パネルの `Drive接続` をユーザーが押すと、content scriptは字幕本文を含まない認証専用runtime messageをservice workerへ送る。
+4. service workerはChrome Identity APIのinteractive OAuthを実行し、成功・失敗だけをcontent scriptへ返す。
+5. OAuth完了後、パネルの操作を `Drive保存` に切り替える。フォルダ作成は最初の字幕同期時に行う。
 
 ### 8.2 字幕同期
 
