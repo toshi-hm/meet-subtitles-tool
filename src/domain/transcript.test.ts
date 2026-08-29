@@ -7,6 +7,7 @@ const session: MeetingSession = {
   id: "session-1",
   meetingKey: "abc-defg-hij",
   startedAt: Date.parse("2026-08-29T00:00:00.000Z"),
+  retentionExpiresAt: Date.parse("2026-08-30T00:00:00.000Z"),
   lastCapturedAt: Date.parse("2026-08-29T00:01:31.000Z"),
   status: "active",
 };

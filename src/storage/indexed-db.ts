@@ -1,4 +1,9 @@
-import type { MeetingSession, SubtitleEntry, SyncQueueItem } from "../domain/types";
+import {
+  SESSION_RETENTION_MS,
+  type MeetingSession,
+  type SubtitleEntry,
+  type SyncQueueItem,
+} from "../domain/types";
 
 export const DATABASE_NAME = "meet-subtitles";
 export const DATABASE_VERSION = 1;
@@ -82,6 +87,33 @@ export class SubtitleRepository {
     return sessions
       .filter((session) => session.status === "active" || session.status === "ending")
       .sort((left, right) => right.startedAt - left.startedAt)[0];
+  }
+
+  async deleteExpiredSessions(now = Date.now(), preserveSessionId?: string): Promise<number> {
+    const database = await this.open();
+    const transaction = database.transaction(["sessions", "entries", "syncQueue"], "readwrite");
+    const sessionsStore = transaction.objectStore("sessions");
+    const entriesStore = transaction.objectStore("entries");
+    const syncQueueStore = transaction.objectStore("syncQueue");
+    const sessions = await requestToPromise<MeetingSession[]>(sessionsStore.getAll());
+    const expiredSessions = sessions.filter(
+      (session) =>
+        session.id !== preserveSessionId &&
+        (session.retentionExpiresAt ?? session.startedAt + SESSION_RETENTION_MS) <= now,
+    );
+
+    for (const session of expiredSessions) {
+      const entries = await requestToPromise<SubtitleEntry[]>(
+        entriesStore
+          .index("bySessionSequence")
+          .getAll(IDBKeyRange.bound([session.id, 0], [session.id, Number.MAX_SAFE_INTEGER])),
+      );
+      for (const entry of entries) entriesStore.delete(entry.id);
+      syncQueueStore.delete(session.id);
+      sessionsStore.delete(session.id);
+    }
+    await transactionToPromise(transaction);
+    return expiredSessions.length;
   }
 
   async saveEntry(entry: SubtitleEntry): Promise<void> {
