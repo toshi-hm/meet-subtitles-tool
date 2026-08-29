@@ -1,5 +1,12 @@
 import { defineConfig } from "wxt";
 
+const nodeGlobal = globalThis as typeof globalThis & {
+  process?: { env?: Record<string, string | undefined> };
+};
+const oauthClientId =
+  nodeGlobal.process?.env?.WXT_GOOGLE_OAUTH_CLIENT_ID ??
+  "YOUR_EXTENSION_OAUTH_CLIENT_ID.apps.googleusercontent.com";
+
 export default defineConfig({
   manifest: {
     name: "Meet Subtitles",
@@ -7,7 +14,7 @@ export default defineConfig({
     permissions: ["identity", "storage"],
     host_permissions: ["https://meet.google.com/*"],
     oauth2: {
-      client_id: "YOUR_EXTENSION_OAUTH_CLIENT_ID.apps.googleusercontent.com",
+      client_id: oauthClientId,
       scopes: ["https://www.googleapis.com/auth/drive.file"],
     },
     action: {
