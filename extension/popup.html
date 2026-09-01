@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meet Subtitles 設定</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Arial, sans-serif;
+      }
+      body {
+        width: 340px;
+        margin: 0;
+        color: #172033;
+        background: #fff;
+      }
+      main {
+        display: grid;
+        gap: 14px;
+        padding: 18px;
+      }
+      h1 {
+        margin: 0;
+        color: #000048;
+        font-size: 18px;
+      }
+      p {
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      form {
+        display: grid;
+        gap: 8px;
+      }
+      label {
+        font-size: 12px;
+        font-weight: 700;
+      }
+      input {
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 34px;
+        padding: 7px 9px;
+        border: 1px solid #94a3b8;
+        border-radius: 6px;
+        font: inherit;
+      }
+      input:focus-visible {
+        outline: 3px solid #60a5fa;
+        outline-offset: 1px;
+      }
+      button {
+        min-height: 34px;
+        border: 1px solid #000048;
+        border-radius: 6px;
+        color: #fff;
+        background: #000048;
+        font: inherit;
+        font-size: 12px;
+        cursor: pointer;
+      }
+      button:hover {
+        border-color: #24246d;
+        background: #24246d;
+      }
+      button:active {
+        border-color: #5f5fa3;
+        background: #5f5fa3;
+      }
+      .status {
+        min-height: 18px;
+        color: #2563eb;
+      }
+      .links {
+        display: grid;
+        gap: 4px;
+      }
+      a {
+        color: #1d4ed8;
+        font-size: 12px;
+      }
+      code {
+        overflow-wrap: anywhere;
+        font-size: 11px;
+      }
+    </style>
+    <script type="module" crossorigin src="/chunks/popup-DhOu9M2S.js"></script>
+  </head>
+  <body>
+    <main>
+      <h1>Meet Subtitles 設定</h1>
+      <p>
+        Google Drive保存に使うOAuth Client IDを入力してください。Client
+        Secretは入力しないでください。
+      </p>
+      <form id="oauth-form">
+        <label for="client-id">OAuth Client ID</label>
+        <input id="client-id" name="client-id" type="password" autocomplete="off" placeholder="1234567890-xxxxx.apps.googleusercontent.com">
+        <button type="submit">保存</button>
+      </form>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+      <div class="links">
+        <p>発行手順:</p>
+        <p>1. Google Cloudでプロジェクトを選択または作成</p>
+        <p>2. Google Drive APIを有効化</p>
+        <p>3. OAuth同意画面を設定し、テストユーザーを追加</p>
+        <p>4. 認証情報で「OAuthクライアントID」→「Chrome拡張機能」を作成</p>
+        <p>
+          5. <code>chrome://extensions</code> または
+          <code>edge://extensions</code> の拡張機能IDをアプリケーションIDに指定
+        </p>
+        <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com" target="_blank" rel="noreferrer">Google Drive APIを有効化</a>
+        <a href="https://console.cloud.google.com/apis/credentials/consent" target="_blank" rel="noreferrer">OAuth同意画面を設定</a>
+        <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer">OAuth Client IDを発行</a>
+      </div>
+    </main>
+  </body>
+</html>
