@@ -1,3 +1,6 @@
+import { formatElapsedTime } from "../domain/transcript";
+import type { MeetingSession, SubtitleEntry } from "../domain/types";
+
 export type PanelStatus =
   | "initialising"
   | "waiting"
@@ -19,7 +22,7 @@ const HOST_ID = "meet-subtitles-floating-panel";
 
 const styles = `
   :host { all: initial; color-scheme: light; font-family: Arial, sans-serif; }
-  .panel { position: fixed; z-index: 2147483647; width: min(360px, calc(100vw - 24px)); min-width: 280px; max-width: calc(100vw - 16px); min-height: 120px; max-height: calc(100vh - 16px); resize: both; overflow: auto; color: #172033; background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 8px 28px rgb(15 23 42 / 20%); }
+  .panel { position: fixed; z-index: 2147483647; width: min(360px, calc(100vw - 24px)); min-width: 280px; max-width: calc(100vw - 16px); min-height: 120px; max-height: calc(100vh - 16px); resize: both; overflow: hidden; color: #172033; background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 8px 28px rgb(15 23 42 / 20%); }
   .header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; cursor: grab; border-bottom: 1px solid #e2e8f0; }
   .header:active { cursor: grabbing; }
   .title { flex: 1; font-size: 14px; font-weight: 700; }
@@ -29,6 +32,13 @@ const styles = `
   .status { display: flex; align-items: center; gap: 6px; margin: 0; color: #475569; font-size: 12px; }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; }
   .dot[data-active="true"] { background: #16a34a; }
+  .transcript { display: grid; gap: 8px; min-height: 52px; max-height: min(42vh, 320px); padding: 8px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; }
+  .transcript:empty::before { color: #64748b; content: "字幕を待っています"; font-size: 12px; }
+  .entry { display: grid; gap: 2px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; }
+  .entry:last-child { padding-bottom: 0; border-bottom: 0; }
+  .entry-header { display: flex; gap: 6px; color: #475569; font-size: 11px; }
+  .entry-speaker { color: #172033; font-weight: 700; }
+  .entry-text { margin: 0; color: #172033; font-size: 13px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
   .actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
   button { min-height: 32px; border: 1px solid #000048; border-radius: 7px; color: #fff; background: #000048; font: inherit; font-size: 12px; cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease; }
   button:hover { border-color: #24246d; background: #24246d; }
@@ -46,6 +56,7 @@ export class FloatingPanel {
   private readonly status: HTMLSpanElement;
   private readonly dot: HTMLSpanElement;
   private readonly count: HTMLSpanElement;
+  private readonly transcript: HTMLDivElement;
   private readonly notice: HTMLParagraphElement;
   private readonly driveButton: HTMLButtonElement;
   private collapsed = false;
@@ -60,12 +71,13 @@ export class FloatingPanel {
     this.host = document.createElement("div");
     this.host.id = HOST_ID;
     this.shadow = this.host.attachShadow({ mode: "open" });
-    this.shadow.innerHTML = `<style>${styles}</style><section class="panel" role="region" aria-label="Meet Subtitles"><header class="header"><span class="title">Meet Subtitles</span><span class="count" aria-live="polite">0件</span><button class="collapse" type="button" aria-label="字幕パネルを折りたたむ" aria-expanded="true">−</button></header><div class="body"><p class="status" role="status"><span class="dot" aria-hidden="true"></span><span>準備しています</span></p><div class="actions"><button type="button" data-action="copy">コピー</button><button type="button" data-action="download">TXT保存</button><button type="button" data-action="drive">Drive接続</button></div><p class="notice" role="status" aria-live="polite"></p></div></section>`;
+    this.shadow.innerHTML = `<style>${styles}</style><section class="panel" role="region" aria-label="Meet Subtitles"><header class="header" aria-label="字幕パネルを移動"><span class="title">Meet Subtitles</span><span class="count" aria-live="polite">0件</span><button class="collapse" type="button" aria-label="字幕パネルを折りたたむ" aria-expanded="true">−</button></header><div class="body"><p class="status" role="status"><span class="dot" aria-hidden="true"></span><span>準備しています</span></p><div class="transcript" role="log" aria-label="字幕履歴" aria-live="polite"></div><div class="actions"><button type="button" data-action="copy">コピー</button><button type="button" data-action="download">TXT保存</button><button type="button" data-action="drive">Drive接続</button></div><p class="notice" role="status" aria-live="polite"></p></div></section>`;
     this.panel = this.shadow.querySelector(".panel") as HTMLDivElement;
     this.body = this.shadow.querySelector(".body") as HTMLDivElement;
     this.status = this.shadow.querySelector(".status span:last-child") as HTMLSpanElement;
     this.dot = this.shadow.querySelector(".dot") as HTMLSpanElement;
     this.count = this.shadow.querySelector(".count") as HTMLSpanElement;
+    this.transcript = this.shadow.querySelector(".transcript") as HTMLDivElement;
     this.notice = this.shadow.querySelector(".notice") as HTMLParagraphElement;
     this.driveButton = this.shadow.querySelector('[data-action="drive"]') as HTMLButtonElement;
     this.setPosition(position);
@@ -92,6 +104,37 @@ export class FloatingPanel {
 
   notify(message: string): void {
     this.notice.textContent = message;
+  }
+
+  updateTranscript(session: MeetingSession, entries: SubtitleEntry[]): void {
+    const distanceFromBottom =
+      this.transcript.scrollHeight - this.transcript.scrollTop - this.transcript.clientHeight;
+    const shouldFollowLatest = this.transcript.childElementCount === 0 || distanceFromBottom <= 8;
+    const fragment = this.document.createDocumentFragment();
+
+    for (const entry of [...entries].sort((left, right) => left.sequence - right.sequence)) {
+      const article = this.document.createElement("article");
+      article.className = "entry";
+
+      const header = this.document.createElement("div");
+      header.className = "entry-header";
+      const time = this.document.createElement("time");
+      time.dateTime = new Date(entry.occurredAt).toISOString();
+      time.textContent = `[${formatElapsedTime(entry.occurredAt, session.startedAt)}]`;
+      const speaker = this.document.createElement("span");
+      speaker.className = "entry-speaker";
+      speaker.textContent = entry.speaker;
+      header.append(time, speaker);
+
+      const text = this.document.createElement("p");
+      text.className = "entry-text";
+      text.textContent = entry.text;
+      article.append(header, text);
+      fragment.append(article);
+    }
+
+    this.transcript.replaceChildren(fragment);
+    if (shouldFollowLatest) this.transcript.scrollTop = this.transcript.scrollHeight;
   }
 
   setDriveActionLabel(label: "Drive接続" | "Drive保存"): void {

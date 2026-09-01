@@ -132,6 +132,7 @@ export default defineContentScript({
       },
     });
     panel.update("initialising", existingEntries.length);
+    panel.updateTranscript(session, existingEntries);
     panel.setDriveActionLabel(existingEntries.length > 0 ? "Drive保存" : "Drive接続");
 
     const finishSession = (): void => {
@@ -167,8 +168,10 @@ export default defineContentScript({
           onCaption: (candidate) => {
             const entry = accumulator.upsert(candidate);
             void repository.saveEntry(entry).then(async () => {
+              const entries = await repository.listEntries(session.id);
               panel.setDriveActionLabel("Drive保存");
-              panel.update("capturing", accumulator.getEntries().length);
+              panel.update("capturing", entries.length);
+              panel.updateTranscript(session, entries);
               await repository.saveSyncQueue({
                 sessionId: session.id,
                 state: "pending",
