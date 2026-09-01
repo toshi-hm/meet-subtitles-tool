@@ -15,14 +15,16 @@ Google Meetの字幕を会議中に残し、必要な時点でコピー・TXT保
 
 ### Chrome / Edgeへの追加
 
-1. 配布ページから拡張機能をインストールします。
-2. ブラウザの拡張機能一覧で `Meet Subtitles` を有効にします。
-3. Meetを開く前に、拡張機能をツールバーへ固定しておくと状態を確認しやすくなります。
-4. `meet.google.com` のページを再読み込みします。
+1. このリポジトリをcloneするか、GitHubの「Code」からZIPでダウンロードして展開します。
+2. `chrome://extensions` または `edge://extensions` を開き、デベロッパーモードを有効にします。
+3. 「展開して読み込む」を選び、cloneしたリポジトリの直下にある `extension` ディレクトリを指定します。リポジトリ全体や `.output` ではなく、`extension/manifest.json` があるディレクトリを選択してください。
+4. ブラウザの拡張機能一覧で `Meet Subtitles` を有効にします。
+5. Meetを開く前に、拡張機能をツールバーへ固定しておくと状態を確認しやすくなります。
+6. `meet.google.com` のページを再読み込みします。
 
 ![ChromeまたはEdgeへのセットアップ手順](docs/images/setup-guide.svg)
 
-> 現在は配布版の準備中です。配布版がない場合は、GitHub Releasesに掲載されたZIPを展開し、ブラウザの拡張機能管理画面から「展開して読み込む」を選択してください。
+> `main`へ変更がマージされるとGitHub ActionsがChrome MV3のビルドを実行し、読み込み用の成果物を `extension` ディレクトリへ更新します。clone後はこの `extension` ディレクトリを選択してください。
 
 ### Google Drive保存の初回設定
 

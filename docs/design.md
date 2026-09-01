@@ -173,7 +173,13 @@ Content scriptのIndexedDBはMeetページのストレージ境界にあるた�
 - 統合: content scriptの字幕DOM変化とrepositoryへの保存を検証。
 - 手動: Chrome／EdgeでMeet入室、字幕自動ON、リロード、退出、タブ終了、OAuth、Drive保存を確認。
 
-## 12. 参照資料と調査制約
+## 12. 配布用ビルド
+
+`main`へのpushを契機に`.github/workflows/build-extension.yml`を実行し、`bun run build`が生成する`.output/chrome-mv3`の内容をリポジトリ直下の`extension`へコピーする。workflowは生成した`extension`の差分を`github-actions[bot]`で`main`へコミットするため、一般ユーザーはclone後に追加のビルドを行わず、`extension`ディレクトリをChrome／Edgeの「展開して読み込む」で指定できる。
+
+生成物だけのpushで同じworkflowが再実行されないよう、`extension/**`だけの変更はworkflowの対象外とする。Actionsの権限は成果物コミットに必要な`contents: write`に限定する。
+
+## 13. 参照資料と調査制約
 
 Context7 MCPは現環境で利用できないため、設計時の技術確認は公式一次資料を参照した。
 

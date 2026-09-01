@@ -125,3 +125,17 @@ IndexedDBへ保存した同一セッションの字幕をフローティング�
 ### 理由（会議中の字幕履歴表示）
 
 既存のIndexedDB保存を表示の正として利用することで、Meet DOMに残らない古い字幕を再利用できる。保存ボタンを押すことを閲覧の前提にせず、会議中の確認とコピー・TXT保存・Drive保存を分離できる。
+
+## 2026-09-02: clone後に利用できるChrome拡張ビルド
+
+### 事実
+
+Chromeの「展開して読み込む」は、`manifest.json`をルートに含むビルド済み拡張ディレクトリを必要とする。GitHub Actionsの実行環境に置かれたartifactだけでは、後からリポジトリをcloneした利用者の作業ツリーには含まれない。
+
+### 判断（clone後に利用できるChrome拡張ビルド）
+
+`main`へのpush後にGitHub ActionsでWXTのChrome MV3ビルドを実行し、生成物をリポジトリ直下の`extension`へコピーして自動コミットする。`extension`だけの変更ではworkflowを再実行しない。
+
+### 理由（clone後に利用できるChrome拡張ビルド）
+
+ビルド成果物を`main`へ反映することで、一般ユーザーはBunやNode.jsを用意せず、clone後に`extension`を選択するだけで利用できる。生成物の自動コミットはソースとの差分管理が必要になるため、Actionsの生成処理を単一のworkflowへ集約する。

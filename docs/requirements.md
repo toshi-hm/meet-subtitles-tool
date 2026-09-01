@@ -135,6 +135,7 @@ Meetへのログインと、拡張機能によるDrive書き込み認可は別�
 - NFR-04: Chrome／Edgeでビルド・静的検査・ユニットテストを通過する。
 - NFR-05: lint/format checkとtestをGitHub Actionsの別workflowで実行する。
 - NFR-06: 利用者向けREADMEだけでセットアップと利用方法が理解できる。
+- NFR-07: `main`への変更反映後、GitHub ActionsがChrome MV3をビルドし、clone後に展開して読み込める `extension` ディレクトリへ成果物を反映する。
 
 ## 8. 制約・リスク
 
