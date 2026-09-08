@@ -143,5 +143,5 @@ describe("FloatingPanel subtitle history", () => {
     expect(article?.querySelector(".entry-text")?.textContent).toBe("更新された発話");
     panel.destroy();
   });
-
 });
+
