@@ -8,8 +8,7 @@ Google Meetの字幕を会議中に残し、必要な時点でコピー・TXT保
 - 会議中の字幕を話者ごとに保存し、パネル内で冒頭までさかのぼって確認する
 - Meet画面内のパネルから、いつでもコピー・TXT保存する
 - パネルを折りたたむ、好きな位置へ移動する
-- 会議終了時にGoogle Driveへ自動保存する
-- 拡張機能のポップアップからGoogle Drive接続設定を行う
+- 会議終了時にGoogle Driveの `Meet Subtitles` フォルダへ自動保存する
 
 ## セットアップ
 
@@ -26,25 +25,20 @@ Google Meetの字幕を会議中に残し、必要な時点でコピー・TXT保
 
 > `main`へ変更がマージされるとGitHub ActionsがChrome MV3のビルドを実行し、読み込み用の成果物を `extension` ディレクトリへ更新します。clone後はこの `extension` ディレクトリを選択してください。
 
-### Google Drive保存の初回設定
+### Google Drive保存の初回設定（Chrome）
 
-Google Meetへのログインだけでは、拡張機能がGoogle Driveへ書き込む権限は付与されません。初めて `Drive接続` または `Drive保存` を行うときにGoogleの認証画面が表示されるため、保存先と権限を確認して許可してください。
+Google Meetへのログインだけでは、拡張機能がGoogle Driveへ書き込む権限は付与されません。会議へ入室後、Meet Subtitlesパネルの `Drive接続` を押すと、ChromeにログインしているGoogleアカウントの認証画面が表示されます。
 
-まずブラウザのツールバーにある `Meet Subtitles` アイコンを押し、ポップアップへOAuth Client IDを入力して保存します。入力欄はパスワード表示で、保存後にClient IDの文字列は画面へ表示されません。
+OAuth Client IDは拡張機能のManifestへ設定済みです。ポップアップへの入力やClient Secretの発行・保存は不要です。OAuth Client IDは公開識別子であり、秘密情報ではありません。
 
-OAuth Client IDは公開識別子であり、Client Secretのような秘密情報ではありません。拡張機能のManifestや認証URLにも含まれるため、Client Secretを発行・入力する必要はありません。
-
-発行手順はポップアップ内にも記載しています。
+Google Cloud側では、次を設定してください。
 
 1. [Google Drive APIを有効化](https://console.cloud.google.com/apis/library/drive.googleapis.com)します。
-2. [OAuth同意画面](https://console.cloud.google.com/apis/credentials/consent)を設定し、テストユーザーを追加します。
-3. [認証情報](https://console.cloud.google.com/apis/credentials)で「OAuthクライアントID」→「Chrome拡張機能」を選びます。
-4. `chrome://extensions` または `edge://extensions` に表示される拡張機能IDをアプリケーションIDへ指定します。
-5. 発行されたOAuth Client IDをポップアップへ貼り付けて保存します。
+2. [OAuth同意画面](https://console.cloud.google.com/apis/credentials/consent)を設定し、テストユーザーとして利用するGoogleアカウントを追加します。
+3. [認証情報](https://console.cloud.google.com/apis/credentials)で、この拡張機能ID向けの「Chrome拡張機能」OAuthクライアントを作成します。
+4. OAuth Client IDを `wxt.config.ts` の `oauth2.client_id` へ設定してビルドします。
 
-会議に入室した後、Meet Subtitlesパネルの `Drive接続` を押してOAuthを実行できます。字幕本文は送信されず、認証だけが行われます。認証後はボタンが `Drive保存` に変わります。
-
-OAuth Client IDが未設定の場合は、Meetの `Drive接続` を押しても接続できません。先にポップアップからClient IDを保存してください。
+Google CloudのアイテムIDは、`chrome://extensions` に表示される拡張機能IDと一致させてください。拡張機能IDが変わる場合は、OAuthクライアントと `wxt.config.ts` のClient IDを更新して再ビルドします。
 
 認証後に作成されるファイルは、マイドライブ直下の次のフォルダに保存されます。
 
@@ -56,8 +50,8 @@ OAuth Client IDが未設定の場合は、Meetの `Drive接続` を押しても�
 
 1. Google Meetの待機画面から会議に入室します。
 2. 入室後、画面内に `Meet Subtitles` パネルが表示され、字幕が自動でONになります。
-3. Drive保存を使う場合は、先に拡張機能アイコンのポップアップへOAuth Client IDを保存します。
-4. 初回はパネルの `Drive接続` を押し、Googleの認証画面で許可します。
+3. Drive保存を使う場合は、パネルの `Drive接続` を押します。
+4. 初回はGoogleの認証画面で、Driveへのファイル作成を許可します。
 5. 会議中は字幕が自動的に蓄積され、パネル内のスクロール可能な字幕履歴へ表示されます。Meet側で古い字幕が見えなくなっても、パネルを上へスクロールして冒頭から確認できます。
 6. 必要な時点で `コピー` または `TXT保存` を押します。
 7. パネルを小さくしたいときは、右上の `−` を押します。ヘッダーをドラッグすると位置を移動できます。右下のリサイズハンドルをドラッグすると幅・高さを変更できます。
@@ -100,12 +94,12 @@ Meetの字幕欄に表示名が提供されない場合は、メールアドレ�
 
 初回の `Drive接続` または `Drive保存` でGoogleの認証を許可したか確認してください。認証や通信に失敗しても、字幕はブラウザ内に残るため、会議終了後に再度 `Drive保存` を実行できます。
 
-`bad client id` などのエラーが表示された場合は、拡張機能アイコンのポップアップでOAuth Client IDを保存し直してください。設定がない場合は「エラー: OAuth Client IDを設定してください。」と表示されます。
+OAuth設定エラーが表示された場合は、Chrome拡張機能用OAuthクライアントのアイテムIDと、`chrome://extensions` の拡張機能IDが一致しているか確認してください。認可画面が出ない場合は、OAuth同意画面のテストユーザーへ利用アカウントを追加してください。
 
-### タブを切り替えたら保存処理が始まらない
+### EdgeでGoogle Driveへ保存できない
 
-タブ切り替えだけでは会議終了と判断しません。会議から退出するか、Meetページを離れてください。
+Google Drive保存はChromeの `identity.getAuthToken` を使用します。Edgeでは、コピー・TXT保存・字幕履歴は利用できますが、Google Drive保存は利用できません。
 
 ## 対応ブラウザ
 
-Chrome、Edgeを中心としたChromium系ブラウザを対象にしています。Chromium系ブラウザでも、Google OAuthや拡張機能APIの対応状況によってDrive保存が利用できない場合があります。
+Chrome、Edgeを中心としたChromium系ブラウザを対象にしています。Google Drive保存はChromeのみを保証します。

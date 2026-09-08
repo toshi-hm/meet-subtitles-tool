@@ -9,7 +9,7 @@
     "build": "wxt build",
     "test": "vitest run",
     "typecheck": "wxt prepare && tsc --noEmit",
-    "lint": "oxlint --deny-warnings .",
+    "lint": "oxlint --deny-warnings --ignore-pattern \"extension/**\" .",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#graphify-out\"",

@@ -13,10 +13,7 @@ content script ── CaptionObserver ── CaptionRepository (IndexedDB)
       │                                      │
       ├── FloatingPanel ── copy / txt download
       │
-      └── runtime message ── service worker ── DriveSyncService
-                                             │
-                                             ▼
-                                       Google Drive API
+      └── runtime message ── service worker ── Chrome Identity API ── Google Drive API
 ```
 
 ## 2. WXTエントリポイント
@@ -24,8 +21,8 @@ content script ── CaptionObserver ── CaptionRepository (IndexedDB)
 想定構成は次のとおりとする。
 
 - `entrypoints/meet.content.ts`: Meetページへの注入、字幕自動ON、DOM監視、パネル描画。
-- `entrypoints/background.ts`: service worker。認証、Drive API、終了時・定期同期メッセージを処理。
-- `entrypoints/popup/`: 拡張機能アイコンからOAuth Client IDを入力・保存する設定画面。
+- `entrypoints/background.ts`: service worker。Chrome Identity APIによる認証、Drive API、終了時・定期同期メッセージを処理。
+- `entrypoints/popup.html`: 拡張機能アイコンから、Google Drive接続の説明を表示する。
 - `src/domain/`: 字幕レコード、整形、重複排除、セッション状態などのブラウザ非依存ロジック。
 - `src/storage/`: IndexedDBリポジトリと拡張機能storageのアダプタ。
 - `src/drive/`: OAuthトークン取得、フォルダ確保、TXTアップロード。
@@ -128,8 +125,10 @@ DOM検出は `MeetSelectors` に集約し、aria-label、role、表示テキス�
 1. Meetページのdocument startでcontent scriptを起動するが、入室済みの退出コントロールが検出されるまでパネルを表示しない。
 2. 入室後、字幕0件でもフローティングパネルを表示する。
 3. パネルの `Drive接続` をユーザーが押すと、content scriptは字幕本文を含まない認証専用runtime messageをservice workerへ送る。
-4. service workerは保存済みClient IDでChrome Identity APIのWeb認証フローを実行し、成功・失敗だけをcontent scriptへ返す。
+4. service workerはManifestのOAuth Client IDでChrome Identity APIの `getAuthToken({ interactive: true })` を実行し、成功・失敗だけをcontent scriptへ返す。
 5. OAuth完了後、パネルの操作を `Drive保存` に切り替える。フォルダ作成は最初の字幕同期時に行う。
+
+Chrome Identity APIがアクセストークンのキャッシュと更新を管理する。拡張機能はリフレッシュトークンを保存せず、Drive APIが401を返したときだけ直前のトークンを `removeCachedAuthToken` で破棄して再取得する。
 
 ### 8.2 字幕同期
 
@@ -158,9 +157,9 @@ Content scriptのIndexedDBはMeetページのストレージ境界にあるた�
 
 想定する権限は次のとおり。
 
-- `storage`: UI状態、OAuth関連の最小メタデータ、DriveフォルダID。
+- `storage`: UI状態とDriveフォルダID。OAuthアクセストークンはChrome Identity APIが管理する。
 - `unlimitedStorage` は必要性を検証してから判断し、初期実装では要求しない。
-- `identity`: Google OAuthのWeb認証フロー。
+- `identity`: Chrome管理のGoogle OAuthアクセストークン取得。
 - Meetのhost permission: `https://meet.google.com/*`。
 
 字幕本文はIndexedDB、OAuth状態やUI設定は拡張機能storageに分ける。不要な `tabs`、`history`、全サイト権限は要求しない。
@@ -171,7 +170,7 @@ Content scriptのIndexedDBはMeetページのストレージ境界にあるた�
 - ストレージ: fake IndexedDBまたはテスト用アダプタでCRUDと再読込を検証。
 - UI: パネルの折りたたみ、ドラッグ、字幕履歴の初期表示・更新・スクロール位置、コピー、通知をDOMテスト。
 - 統合: content scriptの字幕DOM変化とrepositoryへの保存を検証。
-- 手動: Chrome／EdgeでMeet入室、字幕自動ON、リロード、退出、タブ終了、OAuth、Drive保存を確認。
+- 手動: ChromeでMeet入室、字幕自動ON、リロード、退出、タブ終了、OAuth、Drive保存を確認。Edgeでは字幕取得・コピー・TXT保存を確認する。
 
 ## 12. 配布用ビルド
 
