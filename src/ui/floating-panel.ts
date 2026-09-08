@@ -34,7 +34,7 @@ const styles = `
   .dot[data-active="true"] { background: #16a34a; }
   .transcript { display: grid; gap: 8px; min-height: 52px; max-height: min(42vh, 320px); padding: 8px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; }
   .transcript:empty::before { color: #64748b; content: "字幕を待っています"; font-size: 12px; }
-  .entry { display: grid; gap: 2px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; }
+  .entry { display: grid; gap: 2px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; content-visibility: auto; contain-intrinsic-size: 0 56px; }
   .entry:last-child { padding-bottom: 0; border-bottom: 0; }
   .entry-header { display: flex; gap: 6px; color: #475569; font-size: 11px; }
   .entry-speaker { color: #172033; font-weight: 700; }
@@ -59,6 +59,7 @@ export class FloatingPanel {
   private readonly transcript: HTMLDivElement;
   private readonly notice: HTMLParagraphElement;
   private readonly driveButton: HTMLButtonElement;
+  private readonly renderedEntries = new Map<string, HTMLElement>();
   private collapsed = false;
   private dragState?: { offsetX: number; offsetY: number };
 
@@ -110,30 +111,27 @@ export class FloatingPanel {
     const distanceFromBottom =
       this.transcript.scrollHeight - this.transcript.scrollTop - this.transcript.clientHeight;
     const shouldFollowLatest = this.transcript.childElementCount === 0 || distanceFromBottom <= 8;
-    const fragment = this.document.createDocumentFragment();
+    const sortedEntries = [...entries].sort((left, right) => left.sequence - right.sequence);
+    const currentIds = new Set(sortedEntries.map((entry) => entry.id));
 
-    for (const entry of [...entries].sort((left, right) => left.sequence - right.sequence)) {
-      const article = this.document.createElement("article");
-      article.className = "entry";
-
-      const header = this.document.createElement("div");
-      header.className = "entry-header";
-      const time = this.document.createElement("time");
-      time.dateTime = new Date(entry.occurredAt).toISOString();
-      time.textContent = `[${formatElapsedTime(entry.occurredAt, session.startedAt)}]`;
-      const speaker = this.document.createElement("span");
-      speaker.className = "entry-speaker";
-      speaker.textContent = entry.speaker;
-      header.append(time, speaker);
-
-      const text = this.document.createElement("p");
-      text.className = "entry-text";
-      text.textContent = entry.text;
-      article.append(header, text);
-      fragment.append(article);
+    for (const [id, article] of this.renderedEntries) {
+      if (currentIds.has(id)) continue;
+      article.remove();
+      this.renderedEntries.delete(id);
     }
+    for (const entry of sortedEntries) this.upsertTranscriptEntryElement(session, entry);
+    for (const entry of sortedEntries) {
+      const article = this.renderedEntries.get(entry.id);
+      if (article) this.transcript.append(article);
+    }
+    if (shouldFollowLatest) this.transcript.scrollTop = this.transcript.scrollHeight;
+  }
 
-    this.transcript.replaceChildren(fragment);
+  updateTranscriptEntry(session: MeetingSession, entry: SubtitleEntry): void {
+    const distanceFromBottom =
+      this.transcript.scrollHeight - this.transcript.scrollTop - this.transcript.clientHeight;
+    const shouldFollowLatest = this.transcript.childElementCount === 0 || distanceFromBottom <= 8;
+    this.upsertTranscriptEntryElement(session, entry);
     if (shouldFollowLatest) this.transcript.scrollTop = this.transcript.scrollHeight;
   }
 
@@ -193,6 +191,44 @@ export class FloatingPanel {
     header?.addEventListener("pointerup", () => {
       this.dragState = undefined;
     });
+  }
+
+  private upsertTranscriptEntryElement(session: MeetingSession, entry: SubtitleEntry): void {
+    let article = this.renderedEntries.get(entry.id);
+    if (!article) {
+      article = this.document.createElement("article");
+      article.className = "entry";
+      article.dataset.sequence = String(entry.sequence);
+
+      const header = this.document.createElement("div");
+      header.className = "entry-header";
+      const time = this.document.createElement("time");
+      const speaker = this.document.createElement("span");
+      speaker.className = "entry-speaker";
+      header.append(time, speaker);
+
+      const text = this.document.createElement("p");
+      text.className = "entry-text";
+      article.append(header, text);
+      this.renderedEntries.set(entry.id, article);
+    }
+
+    const time = article.querySelector("time");
+    if (time) {
+      time.dateTime = new Date(entry.occurredAt).toISOString();
+      time.textContent = `[${formatElapsedTime(entry.occurredAt, session.startedAt)}]`;
+    }
+    const speaker = article.querySelector(".entry-speaker");
+    if (speaker) speaker.textContent = entry.speaker;
+    const text = article.querySelector(".entry-text");
+    if (text) text.textContent = entry.text;
+
+    const nextArticle = [...this.renderedEntries.values()].find(
+      (candidate) =>
+        candidate !== article && Number(candidate.dataset.sequence) > entry.sequence,
+    );
+    if (nextArticle) this.transcript.insertBefore(article, nextArticle);
+    else this.transcript.append(article);
   }
 
   private async runAction(action: () => Promise<void>): Promise<void> {
