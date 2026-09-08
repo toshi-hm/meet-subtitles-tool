@@ -201,3 +201,4 @@ export default defineContentScript({
     else ctx.addEventListener(document, "DOMContentLoaded", start, { once: true });
   },
 });
+
