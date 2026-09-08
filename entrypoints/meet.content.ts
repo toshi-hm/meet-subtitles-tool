@@ -141,10 +141,13 @@ export default defineContentScript({
       if (session.status !== "active") return;
       currentSessionId = undefined;
       session.status = "ending";
-      void repository.saveSession(session);
+      const endingSave = repository.saveSession(session);
       panel.update("saving", accumulator.size());
       panel.destroy();
-      void persistenceQueue.then(() => requestDriveSync(false)).catch(() => undefined);
+      void persistenceQueue
+        .then(() => endingSave)
+        .then(() => requestDriveSync(false))
+        .catch(() => undefined);
     };
     const lifecycle = new MeetingLifecycleObserver({
       document,
