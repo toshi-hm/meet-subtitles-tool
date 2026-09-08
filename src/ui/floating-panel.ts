@@ -119,8 +119,7 @@ export class FloatingPanel {
       article.remove();
       this.renderedEntries.delete(id);
     }
-    for (const entry of sortedEntries)
-      this.upsertTranscriptEntryElement(session, entry, false);
+    for (const entry of sortedEntries) this.upsertTranscriptEntryElement(session, entry, false);
     for (const entry of sortedEntries) {
       const article = this.renderedEntries.get(entry.id);
       if (article) this.transcript.append(article);
