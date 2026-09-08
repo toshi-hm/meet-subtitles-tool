@@ -224,8 +224,7 @@ export class FloatingPanel {
     if (text) text.textContent = entry.text;
 
     const nextArticle = [...this.renderedEntries.values()].find(
-      (candidate) =>
-        candidate !== article && Number(candidate.dataset.sequence) > entry.sequence,
+      (candidate) => candidate !== article && Number(candidate.dataset.sequence) > entry.sequence,
     );
     if (nextArticle) this.transcript.insertBefore(article, nextArticle);
     else this.transcript.append(article);
@@ -239,3 +238,4 @@ export class FloatingPanel {
     }
   }
 }
+
