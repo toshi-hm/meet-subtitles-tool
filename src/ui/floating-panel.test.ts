@@ -144,4 +144,3 @@ describe("FloatingPanel subtitle history", () => {
     panel.destroy();
   });
 });
-
