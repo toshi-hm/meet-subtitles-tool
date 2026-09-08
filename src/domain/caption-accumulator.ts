@@ -68,4 +68,3 @@ export class CaptionAccumulator {
     return [...this.entries.values()].sort((left, right) => left.sequence - right.sequence);
   }
 }
-
