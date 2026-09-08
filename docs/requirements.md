@@ -24,7 +24,7 @@ Google Meetの字幕を会議中に蓄積し、あとから読み返しやすい
 
 - コア機能は標準WebExtension APIとWXTの抽象化で実装する。
 - Chrome／Edgeを第一検証対象とし、他のChromium系ブラウザでは字幕取得・ローカル保存を優先的に保証する。
-- Google Drive OAuthは各ブラウザのIdentity APIと拡張機能ID・OAuth設定に依存するため、対応可否を手動検証する。
+- Google Drive保存はChrome Identity APIに依存するため、Chromeのみで保証する。
 
 ## 4. 機能要件
 
@@ -96,6 +96,7 @@ Google Meetの字幕を会議中に蓄積し、あとから読み返しやすい
 - 終了イベントで非同期処理が完了しない場合に備え、会議中も一定間隔でDriveへ同期する。
 - 認証未完了・通信失敗・権限拒否の場合は、字幕をIndexedDBに残し、再試行可能な状態を表示する。
 - 認証操作では字幕本文を送信せず、アクセストークン取得だけを行う。
+- Google Drive保存はChromeで提供し、Edgeではコピー・TXT保存・字幕履歴を利用できる。
 
 ## 5. 保存フォーマット
 
@@ -119,13 +120,14 @@ Google Meetの字幕を会議中に蓄積し、あとから読み返しやすい
 
 Meetへのログインと、拡張機能によるDrive書き込み認可は別である。Meetにログイン済みでも、拡張機能がユーザーのDriveへファイルを作成する権限は自動付与されない。
 
-- Chrome拡張機能のIdentity APIのWeb認証フローを利用し、初回のDrive保存操作に対してOAuth同意を要求する。
+- ChromeのIdentity API `getAuthToken` を利用し、初回のDrive保存操作に対してOAuth同意を要求する。
+- OAuth Client IDとスコープはManifestの `oauth2` で宣言する。
 - 基本スコープは `https://www.googleapis.com/auth/drive.file` とする。
-- OAuth Client ID、Google Cloudプロジェクト、Drive API有効化は利用者が拡張機能ポップアップから設定する。
-- OAuth Client IDは拡張機能のポップアップに保存し、Client Secretは要求・保存しない。
+- OAuth Client IDは公開識別子であり、Client Secretを要求・保存しない。
+- アクセストークンの有効期限・キャッシュ管理はChrome Identity APIに委譲し、拡張機能storageへ保存しない。
 - 同意画面は拡張機能の起動時ではなく、ユーザーがDrive保存を有効化・実行した時だけ表示する。
 - `drive.file` は拡張機能が作成・利用するファイルに限定されるため、全Drive読み書き権限を要求しない。
-- フォルダID、OAuth Client ID、アクセストークンは字幕本文やログと分離して拡張機能のローカルストレージで管理し、ログに出力しない。
+- フォルダIDは字幕本文やログと分離して拡張機能のローカルストレージで管理し、ログに出力しない。
 
 ## 7. 非機能要件
 
@@ -141,5 +143,5 @@ Meetへのログインと、拡張機能によるDrive書き込み認可は別�
 
 - MeetのDOMやaria-labelは将来変更される可能性がある。セレクタを集約し、検出不能時の案内を実装する。
 - タブ終了時にネットワーク通信を確実に完了できる保証はない。IndexedDBと定期Drive同期を組み合わせる。
-- Google OAuthの拡張機能ID、ストア配布、ブラウザごとのIdentity API差異がある。他のChromium系ブラウザは手動検証対象とする。
+- Google Drive保存はChromeのIdentity APIに依存し、Edgeでは提供しない。
 - 会議参加者の字幕は個人情報を含む可能性があるため、保存先と権限をREADMEで明示する。

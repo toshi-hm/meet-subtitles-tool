@@ -14,14 +14,16 @@ import { DriveHttpError, GoogleDriveClient } from "../src/drive/google-drive";
 import { toDriveErrorMessage } from "../src/drive/errors";
 
 export default defineBackground(() => {
-  const oauth = new GoogleDriveOAuth(
-    {
-      getRedirectURL: () => browser.identity.getRedirectURL(),
-      launchWebAuthFlow: (details) => browser.identity.launchWebAuthFlow(details),
-    },
-    browser.storage.local,
-    fetch,
-  );
+  const oauth = new GoogleDriveOAuth({
+    getAuthToken:
+      typeof browser.identity.getAuthToken === "function"
+        ? (details) => browser.identity.getAuthToken(details)
+        : undefined,
+    removeCachedAuthToken:
+      typeof browser.identity.removeCachedAuthToken === "function"
+        ? (details) => browser.identity.removeCachedAuthToken(details)
+        : undefined,
+  });
   const drive = new GoogleDriveClient(fetch);
 
   browser.runtime.onMessage.addListener(

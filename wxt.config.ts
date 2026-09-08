@@ -5,6 +5,10 @@ export default defineConfig({
     name: "Meet Subtitles",
     description: "Google Meetの字幕を保存しやすくする拡張機能",
     permissions: ["identity", "storage"],
+    oauth2: {
+      client_id: "969429256536-hv5itnr04orf32vi2flpukhembg27dh8.apps.googleusercontent.com",
+      scopes: ["https://www.googleapis.com/auth/drive.file"],
+    },
     host_permissions: ["https://meet.google.com/*"],
     action: {
       default_title: "Meet Subtitles",
