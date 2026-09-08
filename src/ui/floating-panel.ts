@@ -119,7 +119,8 @@ export class FloatingPanel {
       article.remove();
       this.renderedEntries.delete(id);
     }
-    for (const entry of sortedEntries) this.upsertTranscriptEntryElement(session, entry);
+    for (const entry of sortedEntries)
+      this.upsertTranscriptEntryElement(session, entry, false);
     for (const entry of sortedEntries) {
       const article = this.renderedEntries.get(entry.id);
       if (article) this.transcript.append(article);
@@ -193,8 +194,13 @@ export class FloatingPanel {
     });
   }
 
-  private upsertTranscriptEntryElement(session: MeetingSession, entry: SubtitleEntry): void {
+  private upsertTranscriptEntryElement(
+    session: MeetingSession,
+    entry: SubtitleEntry,
+    place = true,
+  ): void {
     let article = this.renderedEntries.get(entry.id);
+    const isNew = !article;
     if (!article) {
       article = this.document.createElement("article");
       article.className = "entry";
@@ -223,11 +229,16 @@ export class FloatingPanel {
     const text = article.querySelector(".entry-text");
     if (text) text.textContent = entry.text;
 
+    if (!place || !isNew) return;
+    const lastArticle = this.transcript.lastElementChild as HTMLElement | null;
+    if (!lastArticle || Number(lastArticle.dataset.sequence) <= entry.sequence) {
+      this.transcript.append(article);
+      return;
+    }
     const nextArticle = [...this.renderedEntries.values()].find(
       (candidate) => candidate !== article && Number(candidate.dataset.sequence) > entry.sequence,
     );
     if (nextArticle) this.transcript.insertBefore(article, nextArticle);
-    else this.transcript.append(article);
   }
 
   private async runAction(action: () => Promise<void>): Promise<void> {
