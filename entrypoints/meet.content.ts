@@ -64,6 +64,7 @@ export default defineContentScript({
     currentSessionId = session.id;
     await repository.saveSession(session);
     const accumulator = new CaptionAccumulator(session.id, existingEntries.length, existingEntries);
+    let persistenceQueue = Promise.resolve();
 
     const connectDrive = async (): Promise<void> => {
       panel.update("authenticating", (await repository.listEntries(session.id)).length);
@@ -84,6 +85,7 @@ export default defineContentScript({
     };
 
     const requestDriveSync = async (interactive: boolean): Promise<void> => {
+      await persistenceQueue;
       const entries = await repository.listEntries(session.id);
       if (entries.length === 0) throw new Error("保存する字幕がまだありません");
       const response = (await browser.runtime.sendMessage({
@@ -139,10 +141,13 @@ export default defineContentScript({
       if (session.status !== "active") return;
       currentSessionId = undefined;
       session.status = "ending";
-      void repository.saveSession(session);
-      panel.update("saving", accumulator.getEntries().length);
+      const endingSave = repository.saveSession(session);
+      panel.update("saving", accumulator.size());
       panel.destroy();
-      void requestDriveSync(false).catch(() => undefined);
+      void persistenceQueue
+        .then(() => endingSave)
+        .then(() => requestDriveSync(false))
+        .catch(() => undefined);
     };
     const lifecycle = new MeetingLifecycleObserver({
       document,
@@ -167,17 +172,22 @@ export default defineContentScript({
           document,
           onCaption: (candidate) => {
             const entry = accumulator.upsert(candidate);
-            void repository.saveEntry(entry).then(async () => {
-              const entries = await repository.listEntries(session.id);
-              panel.setDriveActionLabel("Drive保存");
-              panel.update("capturing", entries.length);
-              panel.updateTranscript(session, entries);
-              await repository.saveSyncQueue({
-                sessionId: session.id,
-                state: "pending",
-                updatedAt: Date.now(),
+            persistenceQueue = persistenceQueue
+              .then(async () => {
+                await repository.saveEntry(entry);
+                panel.setDriveActionLabel("Drive保存");
+                panel.update("capturing", accumulator.size());
+                panel.updateTranscriptEntry(session, entry);
+                await repository.saveSyncQueue({
+                  sessionId: session.id,
+                  state: "pending",
+                  updatedAt: Date.now(),
+                });
+              })
+              .catch((error: unknown) => {
+                panel.update("error", accumulator.size());
+                panel.notify(error instanceof Error ? error.message : "字幕の保存に失敗しました");
               });
-            });
           },
         });
         observer.start();

@@ -56,6 +56,20 @@ describe("transcript formatting", () => {
     expect(accumulator.getEntries()[0]?.text).toBe("hello there");
   });
 
+  it("tracks the number of unique captions without materialising the list", () => {
+    const accumulator = new CaptionAccumulator(session.id);
+    for (let index = 0; index < 1_000; index += 1) {
+      accumulator.upsert({
+        speaker: "Alice",
+        text: `caption ${index}`,
+        occurredAt: session.startedAt + index,
+        sourceKey: `caption-${index}`,
+      });
+    }
+
+    expect(accumulator.size()).toBe(1_000);
+  });
+
   it("creates a deterministic local filename", () => {
     expect(createTranscriptFilename(new Date("2026-08-29T12:34:56"))).toBe(
       "meet-subtitles-2026-08-29-123456.txt",

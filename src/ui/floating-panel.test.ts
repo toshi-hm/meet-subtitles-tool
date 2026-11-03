@@ -98,4 +98,49 @@ describe("FloatingPanel subtitle history", () => {
     expect(transcript.scrollTop).toBe(120);
     panel.destroy();
   });
+
+  it("updates a long transcript incrementally without recreating existing entries", () => {
+    const panel = createPanel();
+    const entries = Array.from({ length: 1_000 }, (_, index) =>
+      createEntry({
+        id: `entry-${index}`,
+        sequence: index,
+        text: `発話 ${index}`,
+      }),
+    );
+    panel.updateTranscript(session, entries);
+    const transcript = document
+      .getElementById("meet-subtitles-floating-panel")
+      ?.shadowRoot?.querySelector(".transcript");
+    if (!(transcript instanceof HTMLDivElement)) throw new Error("transcript element not found");
+    const firstEntry = transcript.querySelector(".entry");
+
+    panel.updateTranscriptEntry(
+      session,
+      createEntry({ id: "entry-1000", sequence: 1_000, text: "最後の発話" }),
+    );
+
+    expect(transcript.querySelectorAll(".entry")).toHaveLength(1_001);
+    expect(transcript.querySelector(".entry")).toBe(firstEntry);
+    expect(transcript.querySelector(".entry:last-child")?.textContent).toContain("最後の発話");
+    panel.destroy();
+  });
+
+  it("updates an existing transcript entry in place", () => {
+    const panel = createPanel();
+    const entry = createEntry();
+    panel.updateTranscript(session, [entry]);
+    const transcript = document
+      .getElementById("meet-subtitles-floating-panel")
+      ?.shadowRoot?.querySelector(".transcript");
+    if (!(transcript instanceof HTMLDivElement)) throw new Error("transcript element not found");
+    const article = transcript.querySelector(".entry");
+
+    panel.updateTranscriptEntry(session, { ...entry, text: "更新された発話" });
+
+    expect(transcript.querySelectorAll(".entry")).toHaveLength(1);
+    expect(transcript.querySelector(".entry")).toBe(article);
+    expect(article?.querySelector(".entry-text")?.textContent).toBe("更新された発話");
+    panel.destroy();
+  });
 });
